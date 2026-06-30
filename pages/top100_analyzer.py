@@ -249,15 +249,37 @@ def get_company_technicals(price):
 # DISPLAY FUNCTIONS
 # ============================================================================
 
+def render_header():
+    """Render header with back button"""
+    col1, col2 = st.columns([4, 1])
+    
+    with col1:
+        st.markdown("""
+        <div class="header-container">
+            <div style="display: flex; align-items: center; gap: 12px;">
+                <span style="font-size: 32px;">🏢</span>
+                <div>
+                    <h1 class="header-title">TOP 100 COMPANIES ANALYZER</h1>
+                    <div class="header-subtitle">Individual Stock Analysis for 100+ Companies</div>
+                </div>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+    
+    with col2:
+        st.markdown('<div style="height: 40px;"></div>', unsafe_allow_html=True)
+        if st.button("← BACK", use_container_width=True, key="back_btn"):
+            st.switch_page("dashboard.py")
+
 def render_company_selector():
     """Render company selection interface"""
-    st.markdown('<h2 style="color: #3b82f6; text-align: center;">🏢 TOP 100 COMPANIES ANALYZER</h2>', unsafe_allow_html=True)
-    
     companies = get_top_100_companies()
     company_names = [f"{c['Name']} ({c['Symbol']}) - {c['Sector']}" for c in companies]
     
+    st.markdown('<h3 class="section-header">🔍 Select Company for Detailed Analysis</h3>', unsafe_allow_html=True)
+    
     selected = st.selectbox(
-        "Select a Company for Detailed Analysis",
+        "Choose Company",
         company_names,
         index=0
     )
@@ -448,6 +470,7 @@ def render_footer():
 
 def main():
     """Main application"""
+    render_header()
     selected, companies = render_company_selector()
     
     # Parse selection

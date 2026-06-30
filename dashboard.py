@@ -272,16 +272,6 @@ def get_index_data():
             'NIFTY 100': {'price': 26800, 'change': 150, 'change_pct': 0.56},
             'INDIA VIX': {'price': 18.5, 'change': -0.25, 'change_pct': -1.33},
         }
-            'price': 18.5 + np.random.uniform(-2, 2),
-            'change': np.random.uniform(-1, 1),
-            'change_pct': np.random.uniform(-5, 5),
-            'high': 19.5,
-            'low': 17.5,
-            'open': 18.2,
-            'prev_close': 18.3,
-            'volume': 500000,
-        },
-    }
 
 def get_ticker_data():
     """Generate live ticker data"""

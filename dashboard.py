@@ -1454,7 +1454,36 @@ def render_ai_insights():
         </div>
         """
         st.markdown(insights_html2, unsafe_allow_html=True)
-
+def render_navigation():
+    """Render top navigation"""
+    nav_items = [
+        "Dashboard",
+        "NIFTY 50",
+        "NIFTY 100",
+        "BANK NIFTY",
+        "INDIA VIX",
+        "Stock Analysis",
+        "Watchlist",
+        "Market Breadth",
+        "Sector Analysis",
+        "Reports",
+        "Settings",
+    ]
+    
+    st.markdown('<div class="nav-container">', unsafe_allow_html=True)
+    
+    cols = st.columns(len(nav_items))
+    for col, item in zip(cols, nav_items):
+        with col:
+            if st.button(
+                item,
+                key=f"nav_{item}",
+                use_container_width=True,
+                help=f"Navigate to {item}"
+            ):
+                st.session_state.current_page = item
+    
+    st.markdown('</div>', unsafe_allow_html=True)
 def render_footer():
     """Render footer"""
     now = datetime.now()

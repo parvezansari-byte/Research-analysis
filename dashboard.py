@@ -253,10 +253,24 @@ def get_index_data():
             }
         
         if nifty100 is None:
-            nifty100 = {'price': 26800, 'change': 150, 'change_pct': 0.56}
+            nifty100 = {
+                'price': 26800,
+                'change': 150,
+                'change_pct': 0.56,
+                'high': 27100,
+                'low': 26500,
+                'volume': 0,
+            }
         
         if indiavix is None:
-            indiavix = {'price': 18.5, 'change': -0.25, 'change_pct': -1.33}
+            indiavix = {
+                'price': 18.5,
+                'change': -0.25,
+                'change_pct': -1.33,
+                'high': 19.5,
+                'low': 17.5,
+                'volume': 0,
+            }
         
         return {
             'NIFTY 50': nifty50,
@@ -269,8 +283,8 @@ def get_index_data():
         return {
             'NIFTY 50': {'price': 24500, 'change': 152.25, 'change_pct': 0.62, 'high': 24850, 'low': 24200, 'volume': 5000000},
             'BANK NIFTY': {'price': 52300, 'change': 285.50, 'change_pct': 0.55, 'high': 52800, 'low': 51800, 'volume': 3000000},
-            'NIFTY 100': {'price': 26800, 'change': 150, 'change_pct': 0.56},
-            'INDIA VIX': {'price': 18.5, 'change': -0.25, 'change_pct': -1.33},
+            'NIFTY 100': {'price': 26800, 'change': 150, 'change_pct': 0.56, 'high': 27100, 'low': 26500, 'volume': 0},
+            'INDIA VIX': {'price': 18.5, 'change': -0.25, 'change_pct': -1.33, 'high': 19.5, 'low': 17.5, 'volume': 0},
         }
 
 def get_ticker_data():
@@ -477,19 +491,29 @@ def render_kpi_cards():
     
     for col, (name, data) in zip(cols, index_data.items()):
         with col:
-            arrow = "↑" if data['change_pct'] >= 0 else "↓"
-            color = "green" if data['change_pct'] >= 0 else "red"
-            
-            st.markdown(f"""
-            <div class="kpi-card">
-                <div style="font-size: 11px; color: #64748b; text-transform: uppercase; font-weight: 700; margin-bottom: 8px;">{name}</div>
-                <div style="font-size: 24px; font-weight: 700; color: #fff; font-family: 'Courier New', monospace; margin-bottom: 8px;">{data['price']:,.0f}</div>
-                <div style="font-size: 13px; font-weight: 600; color: {'#22c55e' if color=='green' else '#ef4444'};"> {arrow} {data['change']:+.0f} ({data['change_pct']:+.2f}%)</div>
-                <div style="font-size: 11px; color: #94a3b8; margin-top: 8px;">
-                    H: {data['high']:,.0f} L: {data['low']:,.0f}
+            try:
+                arrow = "↑" if data.get('change_pct', 0) >= 0 else "↓"
+                color = "green" if data.get('change_pct', 0) >= 0 else "red"
+                
+                # Safe extraction with defaults
+                price = data.get('price', 0)
+                change = data.get('change', 0)
+                change_pct = data.get('change_pct', 0)
+                high = data.get('high', price)
+                low = data.get('low', price)
+                
+                st.markdown(f"""
+                <div class="kpi-card">
+                    <div style="font-size: 11px; color: #64748b; text-transform: uppercase; font-weight: 700; margin-bottom: 8px;">{name}</div>
+                    <div style="font-size: 24px; font-weight: 700; color: #fff; font-family: 'Courier New', monospace; margin-bottom: 8px;">{price:,.0f}</div>
+                    <div style="font-size: 13px; font-weight: 600; color: {'#22c55e' if color=='green' else '#ef4444'};"> {arrow} {change:+.0f} ({change_pct:+.2f}%)</div>
+                    <div style="font-size: 11px; color: #94a3b8; margin-top: 8px;">
+                        H: {high:,.0f} L: {low:,.0f}
+                    </div>
                 </div>
-            </div>
-            """, unsafe_allow_html=True)
+                """, unsafe_allow_html=True)
+            except Exception as e:
+                st.error(f"Error rendering {name}: {e}")
 
 def render_ticker():
     """Render ticker"""

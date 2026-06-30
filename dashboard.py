@@ -15,6 +15,15 @@ from datetime import datetime, timedelta
 import warnings
 warnings.filterwarnings('ignore')
 
+# Import API Handler
+try:
+    from api_handler import (
+        get_nifty50_data, get_banknifty_data, get_nifty100_data, get_indiavix_data,
+        get_top_gainers_losers, format_large_number, format_percentage, get_stock_color
+    )
+except ImportError:
+    st.warning("API module not found. Using demo data.")
+
 # ============================================================================
 # PAGE CONFIGURATION
 # ============================================================================
@@ -216,39 +225,53 @@ st.markdown(CUSTOM_CSS, unsafe_allow_html=True)
 # ============================================================================
 
 def get_index_data():
-    """Generate index data - NO CACHING"""
-    return {
-        'NIFTY 50': {
-            'price': 24500 + np.random.uniform(-500, 500),
-            'change': np.random.uniform(-100, 100),
-            'change_pct': np.random.uniform(-2, 3),
-            'high': 24800,
-            'low': 24200,
-            'open': 24450,
-            'prev_close': 24400,
-            'volume': 5000000,
-        },
-        'BANK NIFTY': {
-            'price': 52300 + np.random.uniform(-1000, 1000),
-            'change': np.random.uniform(-200, 200),
-            'change_pct': np.random.uniform(-2, 3),
-            'high': 52800,
-            'low': 51800,
-            'open': 52250,
-            'prev_close': 52100,
-            'volume': 3000000,
-        },
-        'NIFTY 100': {
-            'price': 26800 + np.random.uniform(-400, 400),
-            'change': np.random.uniform(-80, 80),
-            'change_pct': np.random.uniform(-2, 3),
-            'high': 27100,
-            'low': 26500,
-            'open': 26750,
-            'prev_close': 26720,
-            'volume': 4000000,
-        },
-        'INDIA VIX': {
+    """Get real index data from API"""
+    try:
+        nifty50 = get_nifty50_data()
+        banknifty = get_banknifty_data()
+        nifty100 = get_nifty100_data()
+        indiavix = get_indiavix_data()
+        
+        if nifty50 is None:
+            nifty50 = {
+                'price': 24500,
+                'change': 152.25,
+                'change_pct': 0.62,
+                'high': 24850,
+                'low': 24200,
+                'volume': 5000000,
+            }
+        
+        if banknifty is None:
+            banknifty = {
+                'price': 52300,
+                'change': 285.50,
+                'change_pct': 0.55,
+                'high': 52800,
+                'low': 51800,
+                'volume': 3000000,
+            }
+        
+        if nifty100 is None:
+            nifty100 = {'price': 26800, 'change': 150, 'change_pct': 0.56}
+        
+        if indiavix is None:
+            indiavix = {'price': 18.5, 'change': -0.25, 'change_pct': -1.33}
+        
+        return {
+            'NIFTY 50': nifty50,
+            'BANK NIFTY': banknifty,
+            'NIFTY 100': nifty100,
+            'INDIA VIX': indiavix,
+        }
+    except Exception as e:
+        st.warning(f"Using demo data: {e}")
+        return {
+            'NIFTY 50': {'price': 24500, 'change': 152.25, 'change_pct': 0.62, 'high': 24850, 'low': 24200, 'volume': 5000000},
+            'BANK NIFTY': {'price': 52300, 'change': 285.50, 'change_pct': 0.55, 'high': 52800, 'low': 51800, 'volume': 3000000},
+            'NIFTY 100': {'price': 26800, 'change': 150, 'change_pct': 0.56},
+            'INDIA VIX': {'price': 18.5, 'change': -0.25, 'change_pct': -1.33},
+        }
             'price': 18.5 + np.random.uniform(-2, 2),
             'change': np.random.uniform(-1, 1),
             'change_pct': np.random.uniform(-5, 5),
@@ -289,34 +312,44 @@ def get_ticker_data():
     return data
 
 def get_gainers_losers():
-    """Generate gainers and losers"""
-    symbols = ['RELIANCE', 'TCS', 'HDFC BANK', 'INFY', 'ICICI BANK', 'BAJAJ AUTO', 'LT', 'MARUTI', 'AXIS BANK', 'WIPRO']
-    
-    gainers = []
-    for i, symbol in enumerate(symbols[:5], 1):
-        gainers.append({
-            'Rank': i,
-            'Symbol': symbol,
-            'Price': np.random.uniform(1000, 3000),
-            'Change %': np.random.uniform(2, 8),
-            'Volume': f"{np.random.randint(1, 100)}M",
-            'RSI': np.random.uniform(50, 80),
-            'Trend': '↑'
-        })
-    
-    losers = []
-    for i, symbol in enumerate(symbols[5:], 1):
-        losers.append({
-            'Rank': i,
-            'Symbol': symbol,
-            'Price': np.random.uniform(500, 2500),
-            'Change %': -np.random.uniform(1, 6),
-            'Volume': f"{np.random.randint(1, 100)}M",
-            'RSI': np.random.uniform(20, 50),
-            'Trend': '↓'
-        })
-    
-    return pd.DataFrame(gainers), pd.DataFrame(losers)
+    """Get real gainers and losers from API"""
+    try:
+        gainers_df, losers_df = get_top_gainers_losers()
+        
+        if gainers_df.empty or losers_df.empty:
+            # Fallback to demo data
+            symbols = ['RELIANCE', 'TCS', 'HDFC BANK', 'INFY', 'ICICI BANK', 'BAJAJ AUTO', 'LT', 'MARUTI', 'AXIS BANK', 'WIPRO']
+            
+            gainers = []
+            for i, symbol in enumerate(symbols[:5], 1):
+                gainers.append({
+                    'Rank': i,
+                    'Symbol': symbol,
+                    'Price': np.random.uniform(1000, 3000),
+                    'Change %': np.random.uniform(2, 8),
+                    'Volume': f"{np.random.randint(1, 100)}M",
+                    'RSI': np.random.uniform(50, 80),
+                    'Trend': '↑'
+                })
+            
+            losers = []
+            for i, symbol in enumerate(symbols[5:], 1):
+                losers.append({
+                    'Rank': i,
+                    'Symbol': symbol,
+                    'Price': np.random.uniform(500, 2500),
+                    'Change %': -np.random.uniform(1, 6),
+                    'Volume': f"{np.random.randint(1, 100)}M",
+                    'RSI': np.random.uniform(20, 50),
+                    'Trend': '↓'
+                })
+            
+            return pd.DataFrame(gainers), pd.DataFrame(losers)
+        
+        return gainers_df, losers_df
+    except Exception as e:
+        st.warning(f"Error fetching gainers/losers: {e}")
+        return pd.DataFrame(), pd.DataFrame()
 
 def get_sector_heatmap():
     """Generate sector heatmap"""
@@ -391,7 +424,7 @@ def get_news():
 
 def render_header():
     """Render header"""
-    col1, col2 = st.columns([2, 1])
+    col1, col2, col3, col4, col5, col6 = st.columns([2, 0.8, 0.65, 0.7, 0.8, 0.7])
     
     with col1:
         st.markdown("""
@@ -424,6 +457,26 @@ def render_header():
             </div>
         </div>
         """, unsafe_allow_html=True)
+    
+    with col3:
+        st.markdown('<div style="height: 40px;"></div>', unsafe_allow_html=True)
+        if st.button("🔬 RESEARCH", use_container_width=True, key="nav_research"):
+            st.switch_page("pages/research_platform.py")
+    
+    with col4:
+        st.markdown('<div style="height: 40px;"></div>', unsafe_allow_html=True)
+        if st.button("🏢 TOP 100", use_container_width=True, key="nav_top100"):
+            st.switch_page("pages/top100_analyzer.py")
+    
+    with col5:
+        st.markdown('<div style="height: 40px;"></div>', unsafe_allow_html=True)
+        if st.button("📊 SCREENER", use_container_width=True, key="nav_screener"):
+            st.switch_page("pages/stock_screener.py")
+    
+    with col6:
+        st.markdown('<div style="height: 40px;"></div>', unsafe_allow_html=True)
+        if st.button("💰 FINANCE", use_container_width=True, key="nav_finance"):
+            st.switch_page("pages/financial_planning.py")
 
 def render_kpi_cards():
     """Render KPI cards"""
@@ -464,43 +517,100 @@ def render_ticker():
     st.markdown(ticker_html, unsafe_allow_html=True)
 
 def render_market_breadth():
-    """Render market breadth"""
+    """Render market breadth with chart"""
     st.markdown('<h3 class="section-header">📈 Market Breadth</h3>', unsafe_allow_html=True)
     
     breadth = get_market_breadth()
-    cols = st.columns(4)
     
-    with cols[0]:
-        st.metric("Advances", f"{breadth['Advance']:,}")
-    with cols[1]:
-        st.metric("Declines", f"{breadth['Decline']:,}")
-    with cols[2]:
-        st.metric("Unchanged", f"{breadth['Unchanged']:,}")
-    with cols[3]:
-        ratio = breadth['Advance'] / breadth['Decline'] if breadth['Decline'] > 0 else 1
-        st.metric("A/D Ratio", f"{ratio:.2f}")
+    col1, col2 = st.columns([1, 1])
+    
+    with col1:
+        # Metrics view
+        cols = st.columns(4)
+        
+        with cols[0]:
+            st.metric("Advances", f"{breadth['Advance']:,}")
+        with cols[1]:
+            st.metric("Declines", f"{breadth['Decline']:,}")
+        with cols[2]:
+            st.metric("Unchanged", f"{breadth['Unchanged']:,}")
+        with cols[3]:
+            ratio = breadth['Advance'] / breadth['Decline'] if breadth['Decline'] > 0 else 1
+            st.metric("A/D Ratio", f"{ratio:.2f}")
+    
+    with col2:
+        # Chart view
+        labels = ['Advances', 'Declines', 'Unchanged']
+        values = [breadth['Advance'], breadth['Decline'], breadth['Unchanged']]
+        colors_chart = ['#22c55e', '#ef4444', '#64748b']
+        
+        fig = go.Figure(data=[go.Pie(
+            labels=labels,
+            values=values,
+            marker=dict(colors=colors_chart),
+            hoverinfo='label+value+percent'
+        )])
+        
+        fig.update_layout(
+            title="Market Breadth Distribution",
+            template="plotly_dark",
+            paper_bgcolor='rgba(15, 23, 42, 0.5)',
+            height=300,
+        )
+        
+        st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
 
 def render_sector_heatmap():
-    """Render sector heatmap"""
+    """Render sector heatmap with chart"""
     st.markdown('<h3 class="section-header">🔥 Sector Performance</h3>', unsafe_allow_html=True)
     
     sectors = get_sector_heatmap()
-    cols = st.columns(4)
     
-    for idx, (sector, change) in enumerate(sectors.items()):
-        col = cols[idx % 4]
-        with col:
-            color = "green" if change > 0 else "red"
-            arrow = "↑" if change > 0 else "↓"
-            st.markdown(f"""
-            <div class="metric-card">
-                <div class="metric-label">{sector}</div>
-                <div class="metric-value" style="color: {'#22c55e' if color=='green' else '#ef4444'};">{arrow}{change:+.2f}%</div>
-            </div>
-            """, unsafe_allow_html=True)
+    col1, col2 = st.columns(2)
+    
+    # Heatmap view
+    with col1:
+        cols = st.columns(4)
+        for idx, (sector, change) in enumerate(sectors.items()):
+            col = cols[idx % 4]
+            with col:
+                color = "green" if change > 0 else "red"
+                arrow = "↑" if change > 0 else "↓"
+                st.markdown(f"""
+                <div class="metric-card">
+                    <div class="metric-label">{sector}</div>
+                    <div class="metric-value" style="color: {'#22c55e' if color=='green' else '#ef4444'};">{arrow}{change:+.2f}%</div>
+                </div>
+                """, unsafe_allow_html=True)
+    
+    # Chart view
+    with col2:
+        sector_list = list(sectors.keys())
+        change_list = list(sectors.values())
+        colors = ['#22c55e' if x > 0 else '#ef4444' for x in change_list]
+        
+        fig = go.Figure(data=[go.Bar(
+            x=sector_list,
+            y=change_list,
+            marker=dict(color=colors)
+        )])
+        
+        fig.update_layout(
+            title="Sector Performance Chart",
+            xaxis_title="Sector",
+            yaxis_title="Change %",
+            template="plotly_dark",
+            paper_bgcolor='rgba(15, 23, 42, 0.5)',
+            plot_bgcolor='rgba(15, 23, 42, 0.5)',
+            height=300,
+            showlegend=False,
+            hovermode='x unified'
+        )
+        
+        st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
 
 def render_gainers_losers():
-    """Render gainers and losers"""
+    """Render gainers and losers with charts"""
     st.markdown('<h3 class="section-header">📊 Top Gainers & Losers</h3>', unsafe_allow_html=True)
     
     gainers, losers = get_gainers_losers()
@@ -509,27 +619,103 @@ def render_gainers_losers():
     
     with col1:
         st.markdown("#### 🟢 Top Gainers")
-        st.dataframe(gainers, use_container_width=True, hide_index=True)
+        if not gainers.empty:
+            # Chart
+            fig_gainers = go.Figure(data=[go.Bar(
+                x=gainers['Symbol'],
+                y=gainers['Change %'],
+                marker=dict(color='#22c55e')
+            )])
+            
+            fig_gainers.update_layout(
+                title="Top Gainers",
+                xaxis_title="Stock",
+                yaxis_title="Change %",
+                template="plotly_dark",
+                paper_bgcolor='rgba(15, 23, 42, 0.5)',
+                plot_bgcolor='rgba(15, 23, 42, 0.5)',
+                height=300,
+                showlegend=False,
+                hovermode='x'
+            )
+            
+            st.plotly_chart(fig_gainers, use_container_width=True, config={'displayModeBar': False})
+            st.dataframe(gainers, use_container_width=True, hide_index=True)
+        else:
+            st.info("No gainers data available")
     
     with col2:
         st.markdown("#### 🔴 Top Losers")
-        st.dataframe(losers, use_container_width=True, hide_index=True)
+        if not losers.empty:
+            # Chart
+            fig_losers = go.Figure(data=[go.Bar(
+                x=losers['Symbol'],
+                y=losers['Change %'],
+                marker=dict(color='#ef4444')
+            )])
+            
+            fig_losers.update_layout(
+                title="Top Losers",
+                xaxis_title="Stock",
+                yaxis_title="Change %",
+                template="plotly_dark",
+                paper_bgcolor='rgba(15, 23, 42, 0.5)',
+                plot_bgcolor='rgba(15, 23, 42, 0.5)',
+                height=300,
+                showlegend=False,
+                hovermode='x'
+            )
+            
+            st.plotly_chart(fig_losers, use_container_width=True, config={'displayModeBar': False})
+            st.dataframe(losers, use_container_width=True, hide_index=True)
+        else:
+            st.info("No losers data available")
 
 def render_fii_dii():
-    """Render FII/DII"""
+    """Render FII/DII with chart"""
     st.markdown('<h3 class="section-header">💰 FII/DII Analysis</h3>', unsafe_allow_html=True)
     
     fii_dii = get_fii_dii()
-    cols = st.columns(4)
     
-    with cols[0]:
-        st.metric("FII Buy", f"₹{fii_dii['FII Buy']:,.0f}Cr")
-    with cols[1]:
-        st.metric("FII Sell", f"₹{fii_dii['FII Sell']:,.0f}Cr")
-    with cols[2]:
-        st.metric("DII Buy", f"₹{fii_dii['DII Buy']:,.0f}Cr")
-    with cols[3]:
-        st.metric("DII Sell", f"₹{fii_dii['DII Sell']:,.0f}Cr")
+    col1, col2 = st.columns([1, 1])
+    
+    with col1:
+        # Metrics view
+        cols = st.columns(4)
+        
+        with cols[0]:
+            st.metric("FII Buy", f"₹{fii_dii['FII Buy']:,.0f}Cr")
+        with cols[1]:
+            st.metric("FII Sell", f"₹{fii_dii['FII Sell']:,.0f}Cr")
+        with cols[2]:
+            st.metric("DII Buy", f"₹{fii_dii['DII Buy']:,.0f}Cr")
+        with cols[3]:
+            st.metric("DII Sell", f"₹{fii_dii['DII Sell']:,.0f}Cr")
+    
+    with col2:
+        # Chart view
+        categories = ['FII', 'DII']
+        buy_values = [fii_dii['FII Buy'], fii_dii['DII Buy']]
+        sell_values = [fii_dii['FII Sell'], fii_dii['DII Sell']]
+        
+        fig = go.Figure(data=[
+            go.Bar(name='Buy', x=categories, y=buy_values, marker_color='#22c55e'),
+            go.Bar(name='Sell', x=categories, y=sell_values, marker_color='#ef4444')
+        ])
+        
+        fig.update_layout(
+            title="FII/DII Activity",
+            xaxis_title="Category",
+            yaxis_title="Amount (₹Cr)",
+            barmode='group',
+            template="plotly_dark",
+            paper_bgcolor='rgba(15, 23, 42, 0.5)',
+            plot_bgcolor='rgba(15, 23, 42, 0.5)',
+            height=300,
+            hovermode='x unified'
+        )
+        
+        st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
 
 def render_news():
     """Render news"""
@@ -585,13 +771,6 @@ def main():
     render_fii_dii()
     render_news()
     render_footer()
-    
-    # Add navigation to Stock Screener
-    st.markdown("---")
-    col1, col2, col3 = st.columns([1, 1, 1])
-    with col2:
-        if st.button("📊 OPEN STOCK SCREENER", use_container_width=True, key="screener_btn"):
-            st.switch_page("pages/stock_screener.py")
     
     st.markdown('</div>', unsafe_allow_html=True)
 

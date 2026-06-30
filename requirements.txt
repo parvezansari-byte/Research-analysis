@@ -1,12 +1,14 @@
-<<<<<<< HEAD
-streamlit==1.28.0
-plotly==5.17.0
-pandas==2.0.3
-numpy==1.24.3
-=======
-streamlit==1.28.0
-plotly==5.17.0
-pandas==2.0.3
-numpy==1.24.3
->>>>>>> 7cdce64485dc3e10b2bfe08a44f31e23d8880768
-yfinance==0.2.32
+streamlit>=1.46
+pandas
+numpy
+plotly
+yfinance
+requests
+beautifulsoup4
+lxml
+ta
+scikit-learn
+matplotlib
+openpyxl
+python-dateutil
+pytz

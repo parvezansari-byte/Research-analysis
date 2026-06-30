@@ -586,6 +586,13 @@ def main():
     render_news()
     render_footer()
     
+    # Add navigation to Stock Screener
+    st.markdown("---")
+    col1, col2, col3 = st.columns([1, 1, 1])
+    with col2:
+        if st.button("📊 OPEN STOCK SCREENER", use_container_width=True, key="screener_btn"):
+            st.switch_page("pages/stock_screener.py")
+    
     st.markdown('</div>', unsafe_allow_html=True)
 
 if __name__ == "__main__":

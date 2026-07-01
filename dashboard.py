@@ -215,7 +215,7 @@ def get_index_details(symbol):
 
 def render_header():
     """Render header"""
-    col1, col2, col3, col4, col5, col6 = st.columns([2, 0.8, 0.65, 0.7, 0.8, 0.7])
+    col1, col2, col3, col4, col5, col6, col7 = st.columns([2, 0.65, 0.65, 0.7, 0.8, 0.75, 0.7])
     
     with col1:
         st.markdown("""
@@ -227,6 +227,11 @@ def render_header():
             </div>
         </div>
         """, unsafe_allow_html=True)
+    
+    with col2:
+        st.markdown('<div style="height: 40px;"></div>', unsafe_allow_html=True)
+        if st.button("📈 CHARTS", use_container_width=True, key="nav_charts"):
+            st.switch_page("pages/advanced_charting.py")
     
     with col3:
         st.markdown('<div style="height: 40px;"></div>', unsafe_allow_html=True)
@@ -247,6 +252,10 @@ def render_header():
         st.markdown('<div style="height: 40px;"></div>', unsafe_allow_html=True)
         if st.button("💰 FINANCE", use_container_width=True, key="nav_finance"):
             st.switch_page("pages/financial_planning.py")
+    
+    with col7:
+        st.markdown('<div style="height: 40px;"></div>', unsafe_allow_html=True)
+        st.button("⚙️ MENU", use_container_width=True, key="nav_menu", disabled=True)
 
 def render_kpi_cards():
     """Render KPI cards - clickable"""

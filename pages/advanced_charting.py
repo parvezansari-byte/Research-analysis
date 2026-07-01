@@ -67,6 +67,35 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # ============================================================================
+# CACHING FUNCTIONS (Rate Limiting Protection)
+# ============================================================================
+
+@st.cache_data(ttl=600)  # Cache for 10 minutes
+def get_chart_data(symbol, timeframe):
+    """Get chart data with caching and error handling"""
+    try:
+        ticker = yf.Ticker(symbol)
+        data = ticker.history(period=timeframe)
+        
+        if data.empty:
+            return None
+        
+        return data
+    except Exception as e:
+        if "Too Many Requests" in str(e) or "Rate limit" in str(e):
+            return None
+        return None
+
+@st.cache_data(ttl=600)
+def get_stock_info_cached(symbol):
+    """Get stock info with caching"""
+    try:
+        ticker = yf.Ticker(symbol)
+        return ticker.info
+    except Exception as e:
+        return {}
+
+# ============================================================================
 # HELPER FUNCTIONS
 # ============================================================================
 
@@ -442,15 +471,27 @@ def main():
     # Fetch data
     try:
         with st.spinner("Loading chart data..."):
-            ticker = yf.Ticker(symbol)
-            data = ticker.history(period=timeframe)
+            # Use cached function to avoid rate limiting
+            data = get_chart_data(symbol, timeframe)
+            
+            if data is None:
+                st.error("⏳ **API Rate Limited** - The market data API is temporarily limiting requests. Please:")
+                st.info("""
+                1. **Wait 2-3 minutes** before trying again
+                2. **Try a different stock** to test the feature
+                3. **Use shorter timeframe** (1mo instead of 5y)
+                4. **Check back later** during off-peak hours
+                
+                This is a normal API limitation from Yahoo Finance (yfinance).
+                """)
+                return
             
             if data.empty:
                 st.error(f"No data found for {symbol}")
                 return
             
-            # Get stock info
-            info = ticker.info
+            # Get stock info (cached)
+            info = get_stock_info_cached(symbol)
             current_price = data['Close'].iloc[-1]
             change = data['Close'].iloc[-1] - data['Close'].iloc[-2]
             change_pct = (change / data['Close'].iloc[-2]) * 100

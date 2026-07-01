@@ -415,6 +415,140 @@ def create_fibonacci_chart(data):
     
     return fig
 
+def create_stochastic_chart(data, period=14):
+    """Create Stochastic Oscillator chart"""
+    
+    low_min = data['Low'].rolling(window=period).min()
+    high_max = data['High'].rolling(window=period).max()
+    
+    k = 100 * ((data['Close'] - low_min) / (high_max - low_min))
+    d = k.rolling(window=3).mean()
+    
+    fig = go.Figure()
+    
+    fig.add_trace(go.Scatter(
+        x=data.index, y=k,
+        mode='lines', name='%K',
+        line=dict(color='#3b82f6', width=2)
+    ))
+    
+    fig.add_trace(go.Scatter(
+        x=data.index, y=d,
+        mode='lines', name='%D',
+        line=dict(color='#f59e0b', width=2)
+    ))
+    
+    fig.add_hline(y=80, line_dash="dash", line_color="#ef4444", annotation_text="Overbought (80)")
+    fig.add_hline(y=20, line_dash="dash", line_color="#22c55e", annotation_text="Oversold (20)")
+    
+    fig.update_layout(
+        title="Stochastic Oscillator (14)",
+        template="plotly_dark",
+        paper_bgcolor='rgba(15, 23, 42, 0.5)',
+        plot_bgcolor='rgba(15, 23, 42, 0.5)',
+        height=400,
+        hovermode='x',
+        yaxis_range=[0, 100]
+    )
+    
+    return fig
+
+def create_williams_r_chart(data, period=14):
+    """Create Williams %R chart"""
+    
+    high_max = data['High'].rolling(window=period).max()
+    low_min = data['Low'].rolling(window=period).min()
+    
+    wr = -100 * ((high_max - data['Close']) / (high_max - low_min))
+    
+    fig = go.Figure()
+    
+    fig.add_trace(go.Scatter(
+        x=data.index, y=wr,
+        mode='lines', name='Williams %R',
+        line=dict(color='#8b5cf6', width=2),
+        fill='tozeroy'
+    ))
+    
+    fig.add_hline(y=-20, line_dash="dash", line_color="#ef4444", annotation_text="Strong (−20)")
+    fig.add_hline(y=-80, line_dash="dash", line_color="#22c55e", annotation_text="Weak (−80)")
+    
+    fig.update_layout(
+        title="Williams %R (14)",
+        template="plotly_dark",
+        paper_bgcolor='rgba(15, 23, 42, 0.5)',
+        plot_bgcolor='rgba(15, 23, 42, 0.5)',
+        height=400,
+        hovermode='x',
+        yaxis_range=[-100, 0],
+        yaxis_title="Williams %R"
+    )
+    
+    return fig
+
+def create_momentum_chart(data, period=12):
+    """Create Momentum chart"""
+    
+    momentum = data['Close'] - data['Close'].shift(period)
+    
+    fig = go.Figure()
+    
+    colors = ['#22c55e' if m > 0 else '#ef4444' for m in momentum]
+    
+    fig.add_trace(go.Bar(
+        x=data.index, y=momentum,
+        marker_color=colors,
+        name='Momentum',
+        showlegend=False
+    ))
+    
+    fig.add_hline(y=0, line_dash="dash", line_color="#64748b")
+    
+    fig.update_layout(
+        title=f"Momentum ({period} periods)",
+        template="plotly_dark",
+        paper_bgcolor='rgba(15, 23, 42, 0.5)',
+        plot_bgcolor='rgba(15, 23, 42, 0.5)',
+        height=400,
+        hovermode='x',
+        yaxis_title="Momentum"
+    )
+    
+    return fig
+
+def create_obv_chart(data):
+    """Create On Balance Volume chart"""
+    
+    obv = [0]
+    for i in range(1, len(data)):
+        if data['Close'].iloc[i] > data['Close'].iloc[i-1]:
+            obv.append(obv[-1] + data['Volume'].iloc[i])
+        elif data['Close'].iloc[i] < data['Close'].iloc[i-1]:
+            obv.append(obv[-1] - data['Volume'].iloc[i])
+        else:
+            obv.append(obv[-1])
+    
+    fig = go.Figure()
+    
+    fig.add_trace(go.Scatter(
+        x=data.index, y=obv,
+        mode='lines', name='OBV',
+        line=dict(color='#06b6d4', width=2),
+        fill='tozeroy'
+    ))
+    
+    fig.update_layout(
+        title="On Balance Volume (OBV)",
+        template="plotly_dark",
+        paper_bgcolor='rgba(15, 23, 42, 0.5)',
+        plot_bgcolor='rgba(15, 23, 42, 0.5)',
+        height=400,
+        hovermode='x',
+        yaxis_title="OBV"
+    )
+    
+    return fig
+
 # ============================================================================
 # MAIN PAGE
 # ============================================================================
@@ -459,7 +593,8 @@ def main():
     with col3:
         chart_type = st.selectbox(
             "Chart Type",
-            ["Candlestick", "RSI", "MACD", "ATR", "Moving Averages", "Fibonacci"],
+            ["Candlestick", "RSI", "MACD", "ATR", "Moving Averages", "Fibonacci", 
+             "Stochastic", "Williams %R", "Momentum", "OBV"],
             key="chart_type_select"
         )
     
@@ -534,6 +669,22 @@ def main():
             
             elif chart_type == "Fibonacci":
                 fig = create_fibonacci_chart(data)
+                st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': True})
+            
+            elif chart_type == "Stochastic":
+                fig = create_stochastic_chart(data)
+                st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': True})
+            
+            elif chart_type == "Williams %R":
+                fig = create_williams_r_chart(data)
+                st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': True})
+            
+            elif chart_type == "Momentum":
+                fig = create_momentum_chart(data)
+                st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': True})
+            
+            elif chart_type == "OBV":
+                fig = create_obv_chart(data)
                 st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': True})
             
             # Support and Resistance

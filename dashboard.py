@@ -331,19 +331,36 @@ def render_gainers_losers():
         st.error(f"Error: {str(e)[:50]}")
 
 def render_sector_heatmap():
-    """Render sector performance heatmap"""
-    st.markdown('<h3 class="section-header">🔥 Sector Performance</h3>', unsafe_allow_html=True)
+    """Render all 20+ sector performance heatmap"""
+    st.markdown('<h3 class="section-header">🔥 Sector Performance (20+ Sectors)</h3>', unsafe_allow_html=True)
     
     try:
-        sectors = get_sector_data()
+        from stocks_indicators_db import get_sector_performance
+        sectors = get_sector_performance()
         
+        # Create 4 columns for better layout
         col1, col2 = st.columns([1, 1])
         
         with col1:
-            # Sector metrics
-            cols = st.columns(5)
-            for idx, (sector, change) in enumerate(sectors.items()):
-                col = cols[idx % 5]
+            # Metrics in grid (2x2 layout per row)
+            cols = st.columns(4)
+            for idx, (sector, change) in enumerate(list(sectors.items())[:10]):
+                col = cols[idx % 4]
+                with col:
+                    arrow = "↑" if change > 0 else "↓"
+                    color = "#22c55e" if change > 0 else "#ef4444"
+                    
+                    st.markdown(f"""
+                    <div class="metric-card">
+                        <div style="font-size: 12px; color: #94a3b8; font-weight: 600;">{sector}</div>
+                        <div style="font-size: 16px; font-weight: 700; color: {color}; margin-top: 8px;">{arrow}{abs(change):.2f}%</div>
+                    </div>
+                    """, unsafe_allow_html=True)
+            
+            st.markdown("#### Second Wave (11-20 sectors)")
+            cols = st.columns(4)
+            for idx, (sector, change) in enumerate(list(sectors.items())[10:20]):
+                col = cols[idx % 4]
                 with col:
                     arrow = "↑" if change > 0 else "↓"
                     color = "#22c55e" if change > 0 else "#ef4444"
@@ -370,16 +387,17 @@ def render_sector_heatmap():
             )])
             
             fig.update_layout(
-                title="Sector Performance Chart",
+                title="All 20+ Sectors Performance",
                 xaxis_title="Sector",
                 yaxis_title="Change %",
                 template="plotly_dark",
                 paper_bgcolor='rgba(15, 23, 42, 0.5)',
                 plot_bgcolor='rgba(15, 23, 42, 0.5)',
-                height=300,
+                height=400,
                 showlegend=False,
                 hovermode='x',
-                margin=dict(b=80),
+                margin=dict(b=100),
+                xaxis=dict(tickangle=-45),
             )
             
             st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})

@@ -103,28 +103,79 @@ st.markdown(f"""
 # HELPER FUNCTIONS
 # ============================================================================
 
-@st.cache_data(ttl=300)
-def get_index_data():
-    """Get live index data"""
+@st.cache_data(ttl=60)
+def get_live_index_data():
+    """Get REAL LIVE index data with day 1 change"""
     try:
+        # Fetch NIFTY 50
         nifty = yf.Ticker("^NSEI")
+        nifty_hist = nifty.history(period='1d')
+        nifty_price = nifty_hist['Close'].iloc[-1] if len(nifty_hist) > 0 else 0
+        nifty_open = nifty_hist['Open'].iloc[-1] if len(nifty_hist) > 0 else nifty_price
+        nifty_high = nifty_hist['High'].iloc[-1] if len(nifty_hist) > 0 else nifty_price
+        nifty_low = nifty_hist['Low'].iloc[-1] if len(nifty_hist) > 0 else nifty_price
+        nifty_change = nifty_price - nifty_open
+        nifty_change_pct = (nifty_change / nifty_open * 100) if nifty_open != 0 else 0
+        
+        # Fetch BANK NIFTY
         bank_nifty = yf.Ticker("^NSEBANK")
+        bank_hist = bank_nifty.history(period='1d')
+        bank_price = bank_hist['Close'].iloc[-1] if len(bank_hist) > 0 else 0
+        bank_open = bank_hist['Open'].iloc[-1] if len(bank_hist) > 0 else bank_price
+        bank_high = bank_hist['High'].iloc[-1] if len(bank_hist) > 0 else bank_price
+        bank_low = bank_hist['Low'].iloc[-1] if len(bank_hist) > 0 else bank_price
+        bank_change = bank_price - bank_open
+        bank_change_pct = (bank_change / bank_open * 100) if bank_open != 0 else 0
+        
+        # Fetch NIFTY 100
         nifty100 = yf.Ticker("^NIFTY100")
+        nifty100_hist = nifty100.history(period='1d')
+        nifty100_price = nifty100_hist['Close'].iloc[-1] if len(nifty100_hist) > 0 else 0
+        nifty100_open = nifty100_hist['Open'].iloc[-1] if len(nifty100_hist) > 0 else nifty100_price
+        nifty100_change = nifty100_price - nifty100_open
+        nifty100_change_pct = (nifty100_change / nifty100_open * 100) if nifty100_open != 0 else 0
+        
+        # Fetch INDIA VIX
         vix = yf.Ticker("^INDIAVIX")
+        vix_hist = vix.history(period='1d')
+        vix_price = vix_hist['Close'].iloc[-1] if len(vix_hist) > 0 else 0
+        vix_open = vix_hist['Open'].iloc[-1] if len(vix_hist) > 0 else vix_price
+        vix_change = vix_price - vix_open
+        vix_change_pct = (vix_change / vix_open * 100) if vix_open != 0 else 0
         
         return {
-            'nifty50': {'price': nifty.info.get('currentPrice', 23865), 'change': 0.69, 'change_pct': -0.69},
-            'banknifty': {'price': bank_nifty.info.get('currentPrice', 57542), 'change': -0.81, 'change_pct': -0.81},
-            'nifty100': {'price': nifty100.info.get('currentPrice', 26800), 'change': 0.56, 'change_pct': 0.56},
-            'indiavix': {'price': vix.info.get('currentPrice', 18.5), 'change': -0.25, 'change_pct': -1.33},
+            'nifty50': {
+                'price': nifty_price,
+                'open': nifty_open,
+                'high': nifty_high,
+                'low': nifty_low,
+                'change': nifty_change,
+                'change_pct': nifty_change_pct,
+                'timestamp': datetime.now().strftime('%H:%M:%S')
+            },
+            'banknifty': {
+                'price': bank_price,
+                'open': bank_open,
+                'high': bank_high,
+                'low': bank_low,
+                'change': bank_change,
+                'change_pct': bank_change_pct,
+                'timestamp': datetime.now().strftime('%H:%M:%S')
+            },
+            'nifty100': {
+                'price': nifty100_price,
+                'change': nifty100_change,
+                'change_pct': nifty100_change_pct,
+            },
+            'indiavix': {
+                'price': vix_price,
+                'change': vix_change,
+                'change_pct': vix_change_pct,
+            }
         }
-    except:
-        return {
-            'nifty50': {'price': 23865, 'change': 0.69, 'change_pct': -0.69},
-            'banknifty': {'price': 57542, 'change': -0.81, 'change_pct': -0.81},
-            'nifty100': {'price': 26800, 'change': 0.56, 'change_pct': 0.56},
-            'indiavix': {'price': 18.5, 'change': -0.25, 'change_pct': -1.33},
-        }
+    except Exception as e:
+        st.warning(f"⚠️ Could not fetch live data: {str(e)[:50]}")
+        return None
 
 @st.cache_data(ttl=300)
 def get_sector_data():
@@ -168,48 +219,227 @@ def render_header():
 # ============================================================================
 
 def render_kpi_cards():
-    """Render beautiful KPI cards with premium styling"""
-    st.markdown('<h3 class="section-header">📊 Market Overview</h3>', unsafe_allow_html=True)
+    """Render beautiful KPI cards with REAL LIVE DATA - NIFTY & BANK NIFTY CLICKABLE"""
+    st.markdown('<h3 class="section-header">📊 Market Overview - LIVE DATA</h3>', unsafe_allow_html=True)
     
-    indices = get_index_data()
+    indices = get_live_index_data()
+    
+    if indices is None:
+        st.error("Could not fetch live data. Please refresh the page.")
+        return
     
     col1, col2, col3, col4 = st.columns(4)
     
+    # NIFTY 50 - CLICKABLE CARD
     with col1:
-        st.markdown(create_gradient_card(
-            "NIFTY 50",
-            f"₹{indices['nifty50']['price']:,.0f}",
-            f"Change: {indices['nifty50']['change_pct']:+.2f}%",
-            "#1e40af", "#2563eb",
-            "📈"
-        ), unsafe_allow_html=True)
+        nifty_color = "#10b981" if indices['nifty50']['change_pct'] >= 0 else "#ef4444"
+        st.markdown(f"""
+        <div style="
+            background: linear-gradient(135deg, #1e40af 0%, #2563eb 100%);
+            border-radius: 16px;
+            padding: 24px;
+            color: white;
+            box-shadow: 0 12px 32px rgba(37, 99, 235, 0.4);
+            border: 1px solid rgba(59, 130, 246, 0.5);
+            backdrop-filter: blur(10px);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            transform: translateY(0);
+        " 
+        class="metric-card"
+        onclick="document.getElementById('nifty_details').click()">
+            <div style="position: relative; z-index: 1;">
+                <div style="
+                    font-size: 12px;
+                    opacity: 0.85;
+                    font-weight: 700;
+                    margin-bottom: 12px;
+                    letter-spacing: 1px;
+                    text-transform: uppercase;
+                ">📈 NIFTY 50</div>
+                <div style="
+                    font-size: 36px;
+                    font-weight: 900;
+                    margin-bottom: 10px;
+                    letter-spacing: -1px;
+                ">₹{indices['nifty50']['price']:,.2f}</div>
+                <div style="
+                    font-size: 14px;
+                    color: {nifty_color};
+                    font-weight: 700;
+                    margin-bottom: 8px;
+                ">
+                    {'▲' if indices['nifty50']['change_pct'] >= 0 else '▼'} {abs(indices['nifty50']['change']):.2f} ({indices['nifty50']['change_pct']:+.2f}%)
+                </div>
+                <div style="
+                    font-size: 10px;
+                    opacity: 0.8;
+                    border-top: 1px solid rgba(255,255,255,0.2);
+                    padding-top: 8px;
+                ">
+                    Open: ₹{indices['nifty50']['open']:,.2f} | H: ₹{indices['nifty50']['high']:,.2f} | L: ₹{indices['nifty50']['low']:,.2f}
+                    <br>Updated: {indices['nifty50']['timestamp']}
+                </div>
+                <div style="
+                    font-size: 11px;
+                    opacity: 0.7;
+                    margin-top: 8px;
+                    font-style: italic;
+                ">Click for details →</div>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        # Hidden button for click handler
+        if st.button("View NIFTY 50 Details", key="nifty_details", help="Click to see detailed NIFTY 50 info"):
+            st.session_state.show_index_details = True
+            st.session_state.selected_index = "NIFTY 50"
+            st.rerun()
     
+    # BANK NIFTY - CLICKABLE CARD
     with col2:
-        st.markdown(create_gradient_card(
-            "BANK NIFTY",
-            f"₹{indices['banknifty']['price']:,.0f}",
-            f"Change: {indices['banknifty']['change_pct']:+.2f}%",
-            "#0891b2", "#06b6d4",
-            "🏦"
-        ), unsafe_allow_html=True)
+        bank_color = "#10b981" if indices['banknifty']['change_pct'] >= 0 else "#ef4444"
+        st.markdown(f"""
+        <div style="
+            background: linear-gradient(135deg, #0891b2 0%, #06b6d4 100%);
+            border-radius: 16px;
+            padding: 24px;
+            color: white;
+            box-shadow: 0 12px 32px rgba(6, 182, 212, 0.4);
+            border: 1px solid rgba(6, 182, 212, 0.5);
+            backdrop-filter: blur(10px);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            transform: translateY(0);
+        "
+        class="metric-card"
+        onclick="document.getElementById('bank_details').click()">
+            <div style="position: relative; z-index: 1;">
+                <div style="
+                    font-size: 12px;
+                    opacity: 0.85;
+                    font-weight: 700;
+                    margin-bottom: 12px;
+                    letter-spacing: 1px;
+                    text-transform: uppercase;
+                ">🏦 BANK NIFTY</div>
+                <div style="
+                    font-size: 36px;
+                    font-weight: 900;
+                    margin-bottom: 10px;
+                    letter-spacing: -1px;
+                ">₹{indices['banknifty']['price']:,.2f}</div>
+                <div style="
+                    font-size: 14px;
+                    color: {bank_color};
+                    font-weight: 700;
+                    margin-bottom: 8px;
+                ">
+                    {'▲' if indices['banknifty']['change_pct'] >= 0 else '▼'} {abs(indices['banknifty']['change']):.2f} ({indices['banknifty']['change_pct']:+.2f}%)
+                </div>
+                <div style="
+                    font-size: 10px;
+                    opacity: 0.8;
+                    border-top: 1px solid rgba(255,255,255,0.2);
+                    padding-top: 8px;
+                ">
+                    Open: ₹{indices['banknifty']['open']:,.2f} | H: ₹{indices['banknifty']['high']:,.2f} | L: ₹{indices['banknifty']['low']:,.2f}
+                    <br>Updated: {indices['banknifty']['timestamp']}
+                </div>
+                <div style="
+                    font-size: 11px;
+                    opacity: 0.7;
+                    margin-top: 8px;
+                    font-style: italic;
+                ">Click for details →</div>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        if st.button("View BANK NIFTY Details", key="bank_details", help="Click to see detailed BANK NIFTY info"):
+            st.session_state.show_index_details = True
+            st.session_state.selected_index = "BANK NIFTY"
+            st.rerun()
     
+    # NIFTY 100
     with col3:
-        st.markdown(create_gradient_card(
-            "NIFTY 100",
-            f"₹{indices['nifty100']['price']:,.0f}",
-            f"Change: {indices['nifty100']['change_pct']:+.2f}%",
-            "#059669", "#10b981",
-            "📊"
-        ), unsafe_allow_html=True)
+        nifty100_color = "#10b981" if indices['nifty100']['change_pct'] >= 0 else "#ef4444"
+        st.markdown(f"""
+        <div style="
+            background: linear-gradient(135deg, #059669 0%, #10b981 100%);
+            border-radius: 16px;
+            padding: 24px;
+            color: white;
+            box-shadow: 0 12px 32px rgba(16, 185, 129, 0.4);
+            border: 1px solid rgba(34, 197, 94, 0.5);
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+        " class="metric-card">
+            <div style="position: relative; z-index: 1;">
+                <div style="
+                    font-size: 12px;
+                    opacity: 0.85;
+                    font-weight: 700;
+                    margin-bottom: 12px;
+                    letter-spacing: 1px;
+                    text-transform: uppercase;
+                ">📊 NIFTY 100</div>
+                <div style="
+                    font-size: 36px;
+                    font-weight: 900;
+                    margin-bottom: 10px;
+                    letter-spacing: -1px;
+                ">₹{indices['nifty100']['price']:,.2f}</div>
+                <div style="
+                    font-size: 14px;
+                    color: {nifty100_color};
+                    font-weight: 700;
+                ">
+                    {'▲' if indices['nifty100']['change_pct'] >= 0 else '▼'} {abs(indices['nifty100']['change']):.2f} ({indices['nifty100']['change_pct']:+.2f}%)
+                </div>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
     
+    # INDIA VIX
     with col4:
-        st.markdown(create_gradient_card(
-            "INDIA VIX",
-            f"₹{indices['indiavix']['price']:.2f}",
-            f"Change: {indices['indiavix']['change_pct']:+.2f}%",
-            "#dc2626", "#991b1b",
-            "⚡"
-        ), unsafe_allow_html=True)
+        vix_color = "#ef4444" if indices['indiavix']['change_pct'] > 0 else "#10b981"
+        st.markdown(f"""
+        <div style="
+            background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
+            border-radius: 16px;
+            padding: 24px;
+            color: white;
+            box-shadow: 0 12px 32px rgba(220, 38, 38, 0.4);
+            border: 1px solid rgba(220, 38, 38, 0.5);
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+        " class="metric-card">
+            <div style="position: relative; z-index: 1;">
+                <div style="
+                    font-size: 12px;
+                    opacity: 0.85;
+                    font-weight: 700;
+                    margin-bottom: 12px;
+                    letter-spacing: 1px;
+                    text-transform: uppercase;
+                ">⚡ INDIA VIX</div>
+                <div style="
+                    font-size: 36px;
+                    font-weight: 900;
+                    margin-bottom: 10px;
+                    letter-spacing: -1px;
+                ">{indices['indiavix']['price']:.2f}</div>
+                <div style="
+                    font-size: 14px;
+                    color: {vix_color};
+                    font-weight: 700;
+                ">
+                    {'▲' if indices['indiavix']['change_pct'] > 0 else '▼'} {abs(indices['indiavix']['change']):.2f} ({indices['indiavix']['change_pct']:+.2f}%)
+                </div>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
 
 # ============================================================================
 # SECTOR PERFORMANCE SECTION
@@ -318,25 +548,162 @@ def render_market_stats():
 
 def main():
     """Main dashboard"""
+    
+    # Initialize session state
+    if 'show_index_details' not in st.session_state:
+        st.session_state.show_index_details = False
+    if 'selected_index' not in st.session_state:
+        st.session_state.selected_index = None
+    
     render_header()
     st.divider()
     
-    render_kpi_cards()
-    st.markdown("")
+    # Show index details modal if requested
+    if st.session_state.show_index_details and st.session_state.selected_index:
+        render_index_details_modal(st.session_state.selected_index)
+        if st.button("← Back to Dashboard", key="back_from_details"):
+            st.session_state.show_index_details = False
+            st.rerun()
+    else:
+        render_kpi_cards()
+        st.markdown("")
+        
+        render_sector_performance()
+        st.markdown("")
+        
+        render_market_stats()
+        
+        # Footer
+        st.markdown("---")
+        st.markdown("""
+        <div style="text-align: center; color: #64748b; font-size: 12px; padding: 20px;">
+            <p>📊 Stock Analysis Pro - Professional Equity Research Terminal</p>
+            <p>Last updated: """ + datetime.now().strftime("%Y-%m-%d %H:%M:%S") + """</p>
+            <p style="font-size: 10px; opacity: 0.7;">🔄 Data updates every 60 seconds | All times in IST</p>
+        </div>
+        """, unsafe_allow_html=True)
+
+def render_index_details_modal(index_name):
+    """Render detailed view for clicked index"""
+    st.markdown(f'<h3 class="section-header">📊 {index_name} - DETAILED VIEW</h3>', unsafe_allow_html=True)
     
-    render_sector_performance()
-    st.markdown("")
+    indices = get_live_index_data()
     
-    render_market_stats()
+    if index_name == "NIFTY 50":
+        data = indices['nifty50']
+        symbol = "^NSEI"
+    elif index_name == "BANK NIFTY":
+        data = indices['banknifty']
+        symbol = "^NSEBANK"
+    else:
+        return
     
-    # Footer
+    # Display detailed metrics
+    col1, col2, col3, col4, col5 = st.columns(5)
+    
+    with col1:
+        st.markdown(f"""
+        <div style="
+            background: linear-gradient(135deg, #2563eb20, #06b6d420);
+            border: 1px solid #2563eb40;
+            border-radius: 12px;
+            padding: 16px;
+            text-align: center;
+        ">
+            <div style="font-size: 11px; color: #94a3b8; font-weight: 700; margin-bottom: 8px;">CURRENT PRICE</div>
+            <div style="font-size: 24px; font-weight: 900; color: #fff;">₹{data['price']:,.2f}</div>
+        </div>
+        """, unsafe_allow_html=True)
+    
+    with col2:
+        change_color = "#10b981" if data['change_pct'] >= 0 else "#ef4444"
+        st.markdown(f"""
+        <div style="
+            background: linear-gradient(135deg, {change_color}20, {change_color}10);
+            border: 1px solid {change_color}40;
+            border-radius: 12px;
+            padding: 16px;
+            text-align: center;
+        ">
+            <div style="font-size: 11px; color: #94a3b8; font-weight: 700; margin-bottom: 8px;">DAY 1 CHANGE</div>
+            <div style="font-size: 20px; font-weight: 900; color: {change_color};">
+                {'▲' if data['change_pct'] >= 0 else '▼'} {abs(data['change']):.2f}
+            </div>
+            <div style="font-size: 12px; color: {change_color}; font-weight: 700;">({data['change_pct']:+.2f}%)</div>
+        </div>
+        """, unsafe_allow_html=True)
+    
+    with col3:
+        st.markdown(f"""
+        <div style="
+            background: linear-gradient(135deg, #06b6d420, #0891b220);
+            border: 1px solid #06b6d440;
+            border-radius: 12px;
+            padding: 16px;
+            text-align: center;
+        ">
+            <div style="font-size: 11px; color: #94a3b8; font-weight: 700; margin-bottom: 8px;">OPEN</div>
+            <div style="font-size: 22px; font-weight: 900; color: #fff;">₹{data['open']:,.2f}</div>
+        </div>
+        """, unsafe_allow_html=True)
+    
+    with col4:
+        st.markdown(f"""
+        <div style="
+            background: linear-gradient(135deg, #10b98120, #06b6d420);
+            border: 1px solid #10b98140;
+            border-radius: 12px;
+            padding: 16px;
+            text-align: center;
+        ">
+            <div style="font-size: 11px; color: #94a3b8; font-weight: 700; margin-bottom: 8px;">HIGH</div>
+            <div style="font-size: 22px; font-weight: 900; color: #10b981;">₹{data['high']:,.2f}</div>
+        </div>
+        """, unsafe_allow_html=True)
+    
+    with col5:
+        st.markdown(f"""
+        <div style="
+            background: linear-gradient(135deg, #ef444420, #dc262620);
+            border: 1px solid #ef444440;
+            border-radius: 12px;
+            padding: 16px;
+            text-align: center;
+        ">
+            <div style="font-size: 11px; color: #94a3b8; font-weight: 700; margin-bottom: 8px;">LOW</div>
+            <div style="font-size: 22px; font-weight: 900; color: #ef4444;">₹{data['low']:,.2f}</div>
+        </div>
+        """, unsafe_allow_html=True)
+    
     st.markdown("---")
-    st.markdown("""
-    <div style="text-align: center; color: #64748b; font-size: 12px; padding: 20px;">
-        <p>📊 Stock Analysis Pro - Professional Equity Research Terminal</p>
-        <p>Last updated: """ + datetime.now().strftime("%Y-%m-%d %H:%M:%S") + """</p>
-    </div>
-    """, unsafe_allow_html=True)
+    
+    # Show live chart
+    st.markdown(f'**Live 1-Day Chart - {index_name}**')
+    try:
+        ticker = yf.Ticker(symbol)
+        hist = ticker.history(period='5d', interval='1h')
+        
+        if not hist.empty:
+            fig = go.Figure(data=[go.Candlestick(
+                x=hist.index,
+                open=hist['Open'],
+                high=hist['High'],
+                low=hist['Low'],
+                close=hist['Close'],
+                name=index_name,
+            )])
+            
+            fig.update_layout(
+                template='plotly_dark',
+                paper_bgcolor='rgba(15, 23, 42, 0.5)',
+                plot_bgcolor='rgba(15, 23, 42, 0.3)',
+                height=400,
+                xaxis_rangeslider_visible=False,
+            )
+            
+            st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
+    except:
+        st.info("Chart data not available at the moment.")
 
 if __name__ == "__main__":
     main()

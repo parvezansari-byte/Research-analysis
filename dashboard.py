@@ -146,6 +146,22 @@ def get_news_safe():
     except Exception as e:
         return [{'headline': 'Market News', 'source': 'News', 'time': 'Recent', 'summary': 'Stay tuned for updates'}]
 
+@st.cache_data(ttl=300)
+def get_sector_data():
+    """Get sector performance data"""
+    return {
+        'IT': 2.45,
+        'Banking': 1.89,
+        'Pharma': -0.56,
+        'Auto': 0.23,
+        'Energy': 3.12,
+        'FMCG': -1.23,
+        'Metals': 1.67,
+        'Realty': -0.34,
+        'Telecom': 0.89,
+        'Utilities': 1.45,
+    }
+
 # ============================================================================
 # DISPLAY FUNCTIONS
 # ============================================================================
@@ -234,6 +250,62 @@ def render_gainers_losers():
     except Exception as e:
         st.error(f"Error: {str(e)[:50]}")
 
+def render_sector_heatmap():
+    """Render sector performance heatmap"""
+    st.markdown('<h3 class="section-header">🔥 Sector Performance</h3>', unsafe_allow_html=True)
+    
+    try:
+        sectors = get_sector_data()
+        
+        col1, col2 = st.columns([1, 1])
+        
+        with col1:
+            # Sector metrics
+            cols = st.columns(5)
+            for idx, (sector, change) in enumerate(sectors.items()):
+                col = cols[idx % 5]
+                with col:
+                    arrow = "↑" if change > 0 else "↓"
+                    color = "#22c55e" if change > 0 else "#ef4444"
+                    
+                    st.markdown(f"""
+                    <div class="metric-card">
+                        <div style="font-size: 12px; color: #94a3b8; font-weight: 600;">{sector}</div>
+                        <div style="font-size: 16px; font-weight: 700; color: {color}; margin-top: 8px;">{arrow}{abs(change):.2f}%</div>
+                    </div>
+                    """, unsafe_allow_html=True)
+        
+        with col2:
+            # Sector chart
+            sector_names = list(sectors.keys())
+            sector_values = list(sectors.values())
+            colors = ['#22c55e' if x > 0 else '#ef4444' for x in sector_values]
+            
+            fig = go.Figure(data=[go.Bar(
+                x=sector_names,
+                y=sector_values,
+                marker=dict(color=colors),
+                text=[f'{x:+.2f}%' for x in sector_values],
+                textposition='outside',
+            )])
+            
+            fig.update_layout(
+                title="Sector Performance Chart",
+                xaxis_title="Sector",
+                yaxis_title="Change %",
+                template="plotly_dark",
+                paper_bgcolor='rgba(15, 23, 42, 0.5)',
+                plot_bgcolor='rgba(15, 23, 42, 0.5)',
+                height=300,
+                showlegend=False,
+                hovermode='x',
+                margin=dict(b=80),
+            )
+            
+            st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
+    except Exception as e:
+        st.error(f"Error loading sectors: {str(e)[:50]}")
+
 def render_fii_dii():
     """Render FII/DII"""
     st.markdown('<h3 class="section-header">💰 FII/DII Analysis</h3>', unsafe_allow_html=True)
@@ -289,6 +361,8 @@ def main():
     render_header()
     st.markdown('<div style="height: 24px;"></div>', unsafe_allow_html=True)
     render_kpi_cards()
+    st.markdown('<div style="height: 24px;"></div>', unsafe_allow_html=True)
+    render_sector_heatmap()
     st.markdown('<div style="height: 24px;"></div>', unsafe_allow_html=True)
     render_gainers_losers()
     st.markdown('<div style="height: 24px;"></div>', unsafe_allow_html=True)

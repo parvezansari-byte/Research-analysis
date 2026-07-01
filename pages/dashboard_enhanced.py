@@ -603,6 +603,17 @@ def main():
     render_header()
     st.divider()
     
+    # ============================================================================
+    # NAVIGATION TO OTHER MODULES
+    # ============================================================================
+    
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        if st.button("💰 Mutual Fund Analysis", use_container_width=True, help="Open Mutual Fund Deep Analysis"):
+            st.switch_page("pages/mutual_fund_deep_analysis.py")
+    
+    st.divider()
+    
     # Show index details modal if requested
     if st.session_state.show_index_details and st.session_state.selected_index:
         render_index_details_modal(st.session_state.selected_index)

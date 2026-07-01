@@ -219,8 +219,8 @@ def render_header():
 # ============================================================================
 
 def render_kpi_cards():
-    """Render beautiful KPI cards with REAL LIVE DATA - NIFTY & BANK NIFTY CLICKABLE"""
-    st.markdown('<h3 class="section-header">📊 Market Overview - LIVE DATA</h3>', unsafe_allow_html=True)
+    """Render BEAUTIFUL KPI cards with REAL LIVE DATA - NIFTY & BANK NIFTY CLICKABLE"""
+    st.markdown('<h3 class="section-header">📊 Key Market Indices</h3>', unsafe_allow_html=True)
     
     indices = get_live_index_data()
     
@@ -228,138 +228,185 @@ def render_kpi_cards():
         st.error("Could not fetch live data. Please refresh the page.")
         return
     
-    col1, col2, col3, col4 = st.columns(4)
+    # Create two columns for NIFTY 50 and BANK NIFTY
+    col1, col2 = st.columns(2)
     
-    # NIFTY 50 - CLICKABLE CARD
+    # ===== NIFTY 50 CARD =====
     with col1:
         nifty_color = "#10b981" if indices['nifty50']['change_pct'] >= 0 else "#ef4444"
+        nifty_arrow = "▲" if indices['nifty50']['change_pct'] >= 0 else "▼"
+        
         st.markdown(f"""
         <div style="
             background: linear-gradient(135deg, #1e40af 0%, #2563eb 100%);
-            border-radius: 16px;
-            padding: 24px;
+            border-radius: 20px;
+            padding: 32px;
             color: white;
-            box-shadow: 0 12px 32px rgba(37, 99, 235, 0.4);
-            border: 1px solid rgba(59, 130, 246, 0.5);
+            box-shadow: 0 16px 40px rgba(37, 99, 235, 0.5);
+            border: 1px solid rgba(59, 130, 246, 0.6);
             backdrop-filter: blur(10px);
-            cursor: pointer;
             transition: all 0.3s ease;
-            transform: translateY(0);
-        " 
-        class="metric-card"
-        onclick="document.getElementById('nifty_details').click()">
+            position: relative;
+            overflow: hidden;
+        ">
+            <div style="
+                position: absolute;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.15), transparent);
+                pointer-events: none;
+            "></div>
             <div style="position: relative; z-index: 1;">
                 <div style="
-                    font-size: 12px;
-                    opacity: 0.85;
+                    font-size: 14px;
+                    opacity: 0.9;
                     font-weight: 700;
                     margin-bottom: 12px;
-                    letter-spacing: 1px;
+                    letter-spacing: 1.5px;
                     text-transform: uppercase;
                 ">📈 NIFTY 50</div>
                 <div style="
-                    font-size: 36px;
+                    font-size: 42px;
                     font-weight: 900;
-                    margin-bottom: 10px;
-                    letter-spacing: -1px;
-                ">₹{indices['nifty50']['price']:,.2f}</div>
-                <div style="
-                    font-size: 14px;
-                    color: {nifty_color};
-                    font-weight: 700;
                     margin-bottom: 8px;
+                    letter-spacing: -1px;
+                    color: #fff;
+                ">₹{indices['nifty50']['price']:,.0f}</div>
+                <div style="
+                    font-size: 16px;
+                    color: {nifty_color};
+                    font-weight: 800;
+                    margin-bottom: 16px;
+                    display: flex;
+                    align-items: center;
+                    gap: 8px;
                 ">
-                    {'▲' if indices['nifty50']['change_pct'] >= 0 else '▼'} {abs(indices['nifty50']['change']):.2f} ({indices['nifty50']['change_pct']:+.2f}%)
+                    <span>{nifty_arrow}</span>
+                    <span>{abs(indices['nifty50']['change']):.2f} ({indices['nifty50']['change_pct']:+.2f}%)</span>
                 </div>
                 <div style="
-                    font-size: 10px;
-                    opacity: 0.8;
                     border-top: 1px solid rgba(255,255,255,0.2);
-                    padding-top: 8px;
+                    padding-top: 12px;
+                    font-size: 11px;
+                    opacity: 0.85;
+                    display: grid;
+                    grid-template-columns: 1fr 1fr;
+                    gap: 12px;
                 ">
-                    Open: ₹{indices['nifty50']['open']:,.2f} | H: ₹{indices['nifty50']['high']:,.2f} | L: ₹{indices['nifty50']['low']:,.2f}
-                    <br>Updated: {indices['nifty50']['timestamp']}
+                    <div><span style="opacity: 0.7;">Open:</span><br>₹{indices['nifty50']['open']:,.0f}</div>
+                    <div><span style="opacity: 0.7;">High:</span><br>₹{indices['nifty50']['high']:,.0f}</div>
+                    <div><span style="opacity: 0.7;">Low:</span><br>₹{indices['nifty50']['low']:,.0f}</div>
+                    <div><span style="opacity: 0.7;">Updated:</span><br>{indices['nifty50']['timestamp']}</div>
                 </div>
                 <div style="
-                    font-size: 11px;
-                    opacity: 0.7;
-                    margin-top: 8px;
+                    font-size: 12px;
+                    opacity: 0.75;
+                    margin-top: 12px;
                     font-style: italic;
-                ">Click for details →</div>
+                    text-align: center;
+                ">👆 Click below for detailed view</div>
             </div>
         </div>
         """, unsafe_allow_html=True)
         
-        # Hidden button for click handler
-        if st.button("View NIFTY 50 Details", key="nifty_details", help="Click to see detailed NIFTY 50 info"):
+        if st.button("📊 View NIFTY 50 Details", key="nifty_btn", use_container_width=True):
             st.session_state.show_index_details = True
             st.session_state.selected_index = "NIFTY 50"
             st.rerun()
     
-    # BANK NIFTY - CLICKABLE CARD
+    # ===== BANK NIFTY CARD =====
     with col2:
         bank_color = "#10b981" if indices['banknifty']['change_pct'] >= 0 else "#ef4444"
+        bank_arrow = "▲" if indices['banknifty']['change_pct'] >= 0 else "▼"
+        
         st.markdown(f"""
         <div style="
             background: linear-gradient(135deg, #0891b2 0%, #06b6d4 100%);
-            border-radius: 16px;
-            padding: 24px;
+            border-radius: 20px;
+            padding: 32px;
             color: white;
-            box-shadow: 0 12px 32px rgba(6, 182, 212, 0.4);
-            border: 1px solid rgba(6, 182, 212, 0.5);
+            box-shadow: 0 16px 40px rgba(6, 182, 212, 0.5);
+            border: 1px solid rgba(6, 182, 212, 0.6);
             backdrop-filter: blur(10px);
-            cursor: pointer;
             transition: all 0.3s ease;
-            transform: translateY(0);
-        "
-        class="metric-card"
-        onclick="document.getElementById('bank_details').click()">
+            position: relative;
+            overflow: hidden;
+        ">
+            <div style="
+                position: absolute;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.15), transparent);
+                pointer-events: none;
+            "></div>
             <div style="position: relative; z-index: 1;">
                 <div style="
-                    font-size: 12px;
-                    opacity: 0.85;
+                    font-size: 14px;
+                    opacity: 0.9;
                     font-weight: 700;
                     margin-bottom: 12px;
-                    letter-spacing: 1px;
+                    letter-spacing: 1.5px;
                     text-transform: uppercase;
                 ">🏦 BANK NIFTY</div>
                 <div style="
-                    font-size: 36px;
+                    font-size: 42px;
                     font-weight: 900;
-                    margin-bottom: 10px;
-                    letter-spacing: -1px;
-                ">₹{indices['banknifty']['price']:,.2f}</div>
-                <div style="
-                    font-size: 14px;
-                    color: {bank_color};
-                    font-weight: 700;
                     margin-bottom: 8px;
+                    letter-spacing: -1px;
+                    color: #fff;
+                ">₹{indices['banknifty']['price']:,.0f}</div>
+                <div style="
+                    font-size: 16px;
+                    color: {bank_color};
+                    font-weight: 800;
+                    margin-bottom: 16px;
+                    display: flex;
+                    align-items: center;
+                    gap: 8px;
                 ">
-                    {'▲' if indices['banknifty']['change_pct'] >= 0 else '▼'} {abs(indices['banknifty']['change']):.2f} ({indices['banknifty']['change_pct']:+.2f}%)
+                    <span>{bank_arrow}</span>
+                    <span>{abs(indices['banknifty']['change']):.2f} ({indices['banknifty']['change_pct']:+.2f}%)</span>
                 </div>
                 <div style="
-                    font-size: 10px;
-                    opacity: 0.8;
                     border-top: 1px solid rgba(255,255,255,0.2);
-                    padding-top: 8px;
+                    padding-top: 12px;
+                    font-size: 11px;
+                    opacity: 0.85;
+                    display: grid;
+                    grid-template-columns: 1fr 1fr;
+                    gap: 12px;
                 ">
-                    Open: ₹{indices['banknifty']['open']:,.2f} | H: ₹{indices['banknifty']['high']:,.2f} | L: ₹{indices['banknifty']['low']:,.2f}
-                    <br>Updated: {indices['banknifty']['timestamp']}
+                    <div><span style="opacity: 0.7;">Open:</span><br>₹{indices['banknifty']['open']:,.0f}</div>
+                    <div><span style="opacity: 0.7;">High:</span><br>₹{indices['banknifty']['high']:,.0f}</div>
+                    <div><span style="opacity: 0.7;">Low:</span><br>₹{indices['banknifty']['low']:,.0f}</div>
+                    <div><span style="opacity: 0.7;">Updated:</span><br>{indices['banknifty']['timestamp']}</div>
                 </div>
                 <div style="
-                    font-size: 11px;
-                    opacity: 0.7;
-                    margin-top: 8px;
+                    font-size: 12px;
+                    opacity: 0.75;
+                    margin-top: 12px;
                     font-style: italic;
-                ">Click for details →</div>
+                    text-align: center;
+                ">👆 Click below for detailed view</div>
             </div>
         </div>
         """, unsafe_allow_html=True)
         
-        if st.button("View BANK NIFTY Details", key="bank_details", help="Click to see detailed BANK NIFTY info"):
+        if st.button("📊 View BANK NIFTY Details", key="bank_btn", use_container_width=True):
             st.session_state.show_index_details = True
             st.session_state.selected_index = "BANK NIFTY"
             st.rerun()
+    
+    st.markdown("")  # Spacing
+    
+    # ===== OTHER INDICES =====
+    st.markdown('<h3 class="section-header">📊 Other Indices</h3>', unsafe_allow_html=True)
+    
+    col3, col4 = st.columns(2)
     
     # NIFTY 100
     with col3:
@@ -373,8 +420,7 @@ def render_kpi_cards():
             box-shadow: 0 12px 32px rgba(16, 185, 129, 0.4);
             border: 1px solid rgba(34, 197, 94, 0.5);
             backdrop-filter: blur(10px);
-            transition: all 0.3s ease;
-        " class="metric-card">
+        ">
             <div style="position: relative; z-index: 1;">
                 <div style="
                     font-size: 12px;
@@ -389,7 +435,7 @@ def render_kpi_cards():
                     font-weight: 900;
                     margin-bottom: 10px;
                     letter-spacing: -1px;
-                ">₹{indices['nifty100']['price']:,.2f}</div>
+                ">₹{indices['nifty100']['price']:,.0f}</div>
                 <div style="
                     font-size: 14px;
                     color: {nifty100_color};
@@ -413,8 +459,7 @@ def render_kpi_cards():
             box-shadow: 0 12px 32px rgba(220, 38, 38, 0.4);
             border: 1px solid rgba(220, 38, 38, 0.5);
             backdrop-filter: blur(10px);
-            transition: all 0.3s ease;
-        " class="metric-card">
+        ">
             <div style="position: relative; z-index: 1;">
                 <div style="
                     font-size: 12px;

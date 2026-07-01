@@ -13,7 +13,7 @@ import yfinance as yf
 from api_handler import get_technical_indicators, get_historical_data
 from visual_enhancements import (
     DARK_THEME, LIGHT_THEME, ENHANCED_CSS, create_gradient_card, 
-    create_stat_box, get_theme_css, CHART_TEMPLATE, GRADIENT_PALETTES, CHART_COLORS
+    create_stat_box, get_theme_css, GRADIENT_PALETTES, CHART_COLORS
 )
 
 # ============================================================================
@@ -539,7 +539,9 @@ def render_sector_performance():
         )])
         
         fig.update_layout(
-            **CHART_TEMPLATE['layout'],
+            template='plotly_dark',
+            paper_bgcolor='rgba(15, 23, 42, 0.5)',
+            plot_bgcolor='rgba(15, 23, 42, 0.3)',
             title="All 20+ Sectors Performance",
             xaxis_title="Sector",
             yaxis_title="Change %",
@@ -547,6 +549,7 @@ def render_sector_performance():
             showlegend=False,
             margin=dict(b=120),
             xaxis=dict(tickangle=-45),
+            font=dict(color='#fff', size=11),
         )
         
         st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
@@ -607,9 +610,28 @@ def main():
     # NAVIGATION TO OTHER MODULES
     # ============================================================================
     
-    col1, col2, col3 = st.columns(3)
+    st.markdown('<h3 style="color: #06b6d4; margin-bottom: 16px;">📊 Quick Navigation</h3>', unsafe_allow_html=True)
+    
+    col1, col2, col3, col4, col5 = st.columns(5)
+    
     with col1:
-        if st.button("💰 Mutual Fund Analysis", use_container_width=True, help="Open Mutual Fund Deep Analysis"):
+        if st.button("📈 Charting", use_container_width=True, help="Advanced charting tools"):
+            st.switch_page("pages/advanced_charting.py")
+    
+    with col2:
+        if st.button("🔬 Screener", use_container_width=True, help="Stock screener with filters"):
+            st.switch_page("pages/stock_screener_enhanced.py")
+    
+    with col3:
+        if st.button("💼 Research", use_container_width=True, help="Deep research platform"):
+            st.switch_page("pages/research_platform.py")
+    
+    with col4:
+        if st.button("💰 Planning", use_container_width=True, help="Financial planning tools"):
+            st.switch_page("pages/financial_planning.py")
+    
+    with col5:
+        if st.button("💰 MF Analysis", use_container_width=True, help="Mutual fund analysis"):
             st.switch_page("pages/mutual_fund_deep_analysis.py")
     
     st.divider()

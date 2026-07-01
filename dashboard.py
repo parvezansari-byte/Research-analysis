@@ -162,6 +162,53 @@ def get_sector_data():
         'Utilities': 1.45,
     }
 
+@st.cache_data(ttl=300)
+def get_index_details(symbol):
+    """Get detailed index data with PCR"""
+    index_data = {
+        '^NSEI': {
+            'name': 'NIFTY 50',
+            'price': 24500,
+            'change': 152,
+            'change_pct': 0.62,
+            'open': 24348,
+            'high': 24850,
+            'low': 24200,
+            'volume': 5000000,
+            'prev_close': 24348,
+            'pcr_oi': 0.87,
+            'pcr_volume': 0.92,
+            'pe_ratio': 21.5,
+            'pb_ratio': 3.2,
+            'div_yield': 1.85,
+            'market_cap': '₹320 Trillion',
+            'avg_volume_20d': 4500000,
+            'upper_circuit': 25000,
+            'lower_circuit': 23000,
+        },
+        '^NSEBANK': {
+            'name': 'BANK NIFTY',
+            'price': 52300,
+            'change': 286,
+            'change_pct': 0.55,
+            'open': 52014,
+            'high': 52800,
+            'low': 51800,
+            'volume': 3000000,
+            'prev_close': 52014,
+            'pcr_oi': 0.95,
+            'pcr_volume': 1.02,
+            'pe_ratio': 19.8,
+            'pb_ratio': 2.8,
+            'div_yield': 2.45,
+            'market_cap': '₹180 Trillion',
+            'avg_volume_20d': 2800000,
+            'upper_circuit': 53500,
+            'lower_circuit': 51000,
+        },
+    }
+    return index_data.get(symbol, {})
+
 # ============================================================================
 # DISPLAY FUNCTIONS
 # ============================================================================
@@ -202,26 +249,50 @@ def render_header():
             st.switch_page("pages/financial_planning.py")
 
 def render_kpi_cards():
-    """Render KPI cards"""
+    """Render KPI cards - clickable"""
     st.markdown('<h3 class="section-header">📊 Key Market Indices</h3>', unsafe_allow_html=True)
     
     try:
         index_data = get_index_data()
         cols = st.columns(4)
         
+        # Map index names to symbols
+        index_symbols = {
+            'NIFTY 50': '^NSEI',
+            'BANK NIFTY': '^NSEBANK',
+            'NIFTY 100': '^NIFTY100',
+            'INDIA VIX': '^INDIAVIX',
+        }
+        
         for col, (name, data) in zip(cols, index_data.items()):
             with col:
                 arrow = "↑" if data.get('change_pct', 0) >= 0 else "↓"
                 color = "#22c55e" if data.get('change_pct', 0) >= 0 else "#ef4444"
                 
-                st.markdown(f"""
-                <div class="kpi-card">
-                    <div style="font-size: 11px; color: #64748b; text-transform: uppercase; font-weight: 700;">{name}</div>
-                    <div style="font-size: 24px; font-weight: 700; color: #fff; margin: 8px 0;">{data.get('price', 0):,.0f}</div>
-                    <div style="font-size: 13px; font-weight: 600; color: {color};">{arrow} {data.get('change', 0):+.0f} ({data.get('change_pct', 0):+.2f}%)</div>
-                    <div style="font-size: 11px; color: #94a3b8; margin-top: 8px;">H: {data.get('high', 0):,.0f} L: {data.get('low', 0):,.0f}</div>
-                </div>
-                """, unsafe_allow_html=True)
+                # Make NIFTY 50 and BANK NIFTY clickable
+                if name in ['^NSEI', 'NIFTY 50', '^NSEBANK', 'BANK NIFTY']:
+                    symbol = index_symbols.get(name, name)
+                    
+                    # Use button styled as card
+                    if st.button(
+                        label=f"{name}\n₹{data.get('price', 0):,.0f}\n{arrow} {data.get('change', 0):+.0f} ({data.get('change_pct', 0):+.2f}%)\nH: {data.get('high', 0):,.0f} L: {data.get('low', 0):,.0f}",
+                        key=f"btn_{name}",
+                        use_container_width=True
+                    ):
+                        st.session_state.selected_index = symbol
+                        st.session_state.show_index_details = True
+                        st.rerun()
+                    
+                else:
+                    # Non-clickable cards
+                    st.markdown(f"""
+                    <div class="kpi-card">
+                        <div style="font-size: 11px; color: #64748b; text-transform: uppercase; font-weight: 700;">{name}</div>
+                        <div style="font-size: 24px; font-weight: 700; color: #fff; margin: 8px 0;">{data.get('price', 0):,.0f}</div>
+                        <div style="font-size: 13px; font-weight: 600; color: {color};">{arrow} {data.get('change', 0):+.0f} ({data.get('change_pct', 0):+.2f}%)</div>
+                        <div style="font-size: 11px; color: #94a3b8; margin-top: 8px;">H: {data.get('high', 0):,.0f} L: {data.get('low', 0):,.0f}</div>
+                    </div>
+                    """, unsafe_allow_html=True)
     except Exception as e:
         st.error(f"Error rendering KPI cards: {str(e)[:50]}")
 
@@ -327,6 +398,123 @@ def render_fii_dii():
     with cols[3]:
         st.metric("DII Sell", f"₹{fii_dii['DII Sell']:,.0f}Cr")
 
+def render_index_details_modal(symbol):
+    """Show detailed index information in modal"""
+    details = get_index_details(symbol)
+    
+    if not details:
+        st.error("Index data not found")
+        return
+    
+    st.markdown(f"""
+    <div style="padding: 20px; background: rgba(15, 23, 42, 0.8); border-radius: 12px; border: 1px solid rgba(148, 163, 184, 0.1);">
+        <h2 style="color: #fff; margin-top: 0;">{details['name']} - Detailed Analysis</h2>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    # Price info
+    st.markdown("### 💹 Price Information")
+    col1, col2, col3, col4 = st.columns(4)
+    
+    with col1:
+        st.metric("Current Price", f"₹{details['price']:,.0f}", f"{details['change']:+.0f} ({details['change_pct']:+.2f}%)")
+    with col2:
+        st.metric("Open", f"₹{details['open']:,.0f}", f"High: ₹{details['high']:,.0f}")
+    with col3:
+        st.metric("Low", f"₹{details['low']:,.0f}", f"Prev Close: ₹{details['prev_close']:,.0f}")
+    with col4:
+        st.metric("Volume", f"{details['volume']:,.0f}", f"Avg (20d): {details['avg_volume_20d']:,.0f}")
+    
+    # PCR Data
+    st.markdown("### 📊 PCR Ratio (Put-Call Ratio)")
+    col1, col2, col3, col4 = st.columns(4)
+    
+    with col1:
+        pcr_oi = details['pcr_oi']
+        pcr_status = "Bullish" if pcr_oi < 0.80 else "Neutral" if pcr_oi < 1.00 else "Bearish"
+        st.metric("PCR (OI)", f"{pcr_oi:.2f}", pcr_status, delta_color="inverse")
+    
+    with col2:
+        pcr_vol = details['pcr_volume']
+        vol_status = "Bullish" if pcr_vol < 0.90 else "Neutral" if pcr_vol < 1.10 else "Bearish"
+        st.metric("PCR (Volume)", f"{pcr_vol:.2f}", vol_status, delta_color="inverse")
+    
+    with col3:
+        st.metric("PE Ratio", f"{details['pe_ratio']:.1f}x", "Fair Value" if details['pe_ratio'] < 22 else "Overvalued")
+    
+    with col4:
+        st.metric("Dividend Yield", f"{details['div_yield']:.2f}%", "Good Income")
+    
+    # Index Details
+    st.markdown("### 📈 Index Details")
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        st.markdown(f"""
+        <div class="metric-card">
+            <div style="color: #64748b; font-size: 12px; font-weight: 600;">Market Cap</div>
+            <div style="color: #fff; font-size: 18px; font-weight: 700; margin-top: 8px;">{details['market_cap']}</div>
+        </div>
+        """, unsafe_allow_html=True)
+    
+    with col2:
+        st.markdown(f"""
+        <div class="metric-card">
+            <div style="color: #64748b; font-size: 12px; font-weight: 600;">PB Ratio</div>
+            <div style="color: #fff; font-size: 18px; font-weight: 700; margin-top: 8px;">{details['pb_ratio']:.2f}x</div>
+        </div>
+        """, unsafe_allow_html=True)
+    
+    # Circuit Limits
+    st.markdown("### 🚨 Circuit Limits")
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        st.markdown(f"""
+        <div class="metric-card" style="border-left: 4px solid #22c55e;">
+            <div style="color: #64748b; font-size: 12px; font-weight: 600;">Upper Circuit</div>
+            <div style="color: #22c55e; font-size: 18px; font-weight: 700; margin-top: 8px;">₹{details['upper_circuit']:,.0f}</div>
+        </div>
+        """, unsafe_allow_html=True)
+    
+    with col2:
+        st.markdown(f"""
+        <div class="metric-card" style="border-left: 4px solid #ef4444;">
+            <div style="color: #64748b; font-size: 12px; font-weight: 600;">Lower Circuit</div>
+            <div style="color: #ef4444; font-size: 18px; font-weight: 700; margin-top: 8px;">₹{details['lower_circuit']:,.0f}</div>
+        </div>
+        """, unsafe_allow_html=True)
+    
+    st.divider()
+    
+    col1, col2 = st.columns(2)
+    with col1:
+        if st.button("← Back to Dashboard", use_container_width=True, key="back_details"):
+            st.session_state.show_index_details = False
+            st.rerun()
+    
+    with col2:
+        st.button("📊 View Charts", use_container_width=True, key="view_charts", disabled=True)
+    """Render FII/DII"""
+    st.markdown('<h3 class="section-header">💰 FII/DII Analysis</h3>', unsafe_allow_html=True)
+    
+    fii_dii = {
+        'FII Buy': 9137,
+        'FII Sell': 4919,
+        'DII Buy': 4705,
+        'DII Sell': 2741,
+    }
+    
+    cols = st.columns(4)
+    with cols[0]:
+        st.metric("FII Buy", f"₹{fii_dii['FII Buy']:,.0f}Cr")
+    with cols[1]:
+        st.metric("FII Sell", f"₹{fii_dii['FII Sell']:,.0f}Cr")
+    with cols[2]:
+        st.metric("DII Buy", f"₹{fii_dii['DII Buy']:,.0f}Cr")
+    with cols[3]:
+        st.metric("DII Sell", f"₹{fii_dii['DII Sell']:,.0f}Cr")
+
 def render_news():
     """Render news"""
     st.markdown('<h3 class="section-header">📰 Market News</h3>', unsafe_allow_html=True)
@@ -358,17 +546,29 @@ def render_news():
 
 def main():
     """Main app"""
+    # Initialize session state
+    if 'show_index_details' not in st.session_state:
+        st.session_state.show_index_details = False
+    if 'selected_index' not in st.session_state:
+        st.session_state.selected_index = None
+    
     render_header()
     st.markdown('<div style="height: 24px;"></div>', unsafe_allow_html=True)
-    render_kpi_cards()
-    st.markdown('<div style="height: 24px;"></div>', unsafe_allow_html=True)
-    render_sector_heatmap()
-    st.markdown('<div style="height: 24px;"></div>', unsafe_allow_html=True)
-    render_gainers_losers()
-    st.markdown('<div style="height: 24px;"></div>', unsafe_allow_html=True)
-    render_fii_dii()
-    st.markdown('<div style="height: 24px;"></div>', unsafe_allow_html=True)
-    render_news()
+    
+    # Show index details if selected
+    if st.session_state.show_index_details and st.session_state.selected_index:
+        render_index_details_modal(st.session_state.selected_index)
+    else:
+        # Show normal dashboard
+        render_kpi_cards()
+        st.markdown('<div style="height: 24px;"></div>', unsafe_allow_html=True)
+        render_sector_heatmap()
+        st.markdown('<div style="height: 24px;"></div>', unsafe_allow_html=True)
+        render_gainers_losers()
+        st.markdown('<div style="height: 24px;"></div>', unsafe_allow_html=True)
+        render_fii_dii()
+        st.markdown('<div style="height: 24px;"></div>', unsafe_allow_html=True)
+        render_news()
 
 if __name__ == "__main__":
     main()

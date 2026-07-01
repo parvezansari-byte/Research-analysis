@@ -625,22 +625,58 @@ def main():
                 st.error(f"No data found for {symbol}")
                 return
             
-            # Get stock info (cached)
-            info = get_stock_info_cached(symbol)
-            current_price = data['Close'].iloc[-1]
-            change = data['Close'].iloc[-1] - data['Close'].iloc[-2]
-            change_pct = (change / data['Close'].iloc[-2]) * 100
+            # Display stock info with PREMIUM BLUE/TEAL GRADIENT cards
+            st.markdown('<h3 class="section-header">💹 Stock Information</h3>', unsafe_allow_html=True)
             
-            # Display stock info
             col1, col2, col3, col4 = st.columns(4)
+            
+            # Current Price Card (Premium Blue)
             with col1:
-                st.metric("Current Price", f"₹{current_price:.2f}", f"{change:+.2f} ({change_pct:+.2f}%)")
+                st.markdown(f"""
+                <div style="background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%); 
+                            border-radius: 16px; padding: 24px; color: white; box-shadow: 0 12px 24px rgba(37, 99, 235, 0.4); border: 1px solid rgba(59, 130, 246, 0.5);">
+                    <div style="font-size: 12px; opacity: 0.85; font-weight: 600; margin-bottom: 12px; letter-spacing: 0.5px;">💹 CURRENT PRICE</div>
+                    <div style="font-size: 36px; font-weight: 900; margin-bottom: 10px; letter-spacing: -1px;">₹{current_price:.2f}</div>
+                    <div style="font-size: 14px; color: {'#4ade80' if change >= 0 else '#ff6b6b'}; font-weight: 700;">
+                        {'▲' if change >= 0 else '▼'} {abs(change):.2f} ({change_pct:+.2f}%)
+                    </div>
+                </div>
+                """, unsafe_allow_html=True)
+            
+            # 52W High Card (Teal)
             with col2:
-                st.metric("52W High", f"₹{info.get('fiftyTwoWeekHigh', 'N/A')}")
+                high_val = info.get('fiftyTwoWeekHigh', 'N/A')
+                st.markdown(f"""
+                <div style="background: linear-gradient(135deg, #0891b2 0%, #06b6d4 100%); 
+                            border-radius: 16px; padding: 24px; color: white; box-shadow: 0 12px 24px rgba(6, 182, 212, 0.4); border: 1px solid rgba(6, 182, 212, 0.5);">
+                    <div style="font-size: 12px; opacity: 0.85; font-weight: 600; margin-bottom: 12px; letter-spacing: 0.5px;">📈 52W HIGH</div>
+                    <div style="font-size: 32px; font-weight: 900; margin-bottom: 10px;">₹{high_val if isinstance(high_val, (int, float)) else 'N/A'}</div>
+                    <div style="font-size: 12px; opacity: 0.85;">Peak Price</div>
+                </div>
+                """, unsafe_allow_html=True)
+            
+            # 52W Low Card (Blue-Teal)
             with col3:
-                st.metric("52W Low", f"₹{info.get('fiftyTwoWeekLow', 'N/A')}")
+                low_val = info.get('fiftyTwoWeekLow', 'N/A')
+                st.markdown(f"""
+                <div style="background: linear-gradient(135deg, #1e40af 0%, #0891b2 100%); 
+                            border-radius: 16px; padding: 24px; color: white; box-shadow: 0 12px 24px rgba(30, 64, 175, 0.4); border: 1px solid rgba(37, 99, 235, 0.5);">
+                    <div style="font-size: 12px; opacity: 0.85; font-weight: 600; margin-bottom: 12px; letter-spacing: 0.5px;">📉 52W LOW</div>
+                    <div style="font-size: 32px; font-weight: 900; margin-bottom: 10px;">₹{low_val if isinstance(low_val, (int, float)) else 'N/A'}</div>
+                    <div style="font-size: 12px; opacity: 0.85;">Bottom Price</div>
+                </div>
+                """, unsafe_allow_html=True)
+            
+            # Volume Card (Deep Blue)
             with col4:
-                st.metric("Volume", f"{data['Volume'].iloc[-1]:,.0f}")
+                st.markdown(f"""
+                <div style="background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%); 
+                            border-radius: 16px; padding: 24px; color: white; box-shadow: 0 12px 24px rgba(30, 58, 138, 0.4); border: 1px solid rgba(37, 99, 235, 0.5);">
+                    <div style="font-size: 12px; opacity: 0.85; font-weight: 600; margin-bottom: 12px; letter-spacing: 0.5px;">📊 VOLUME</div>
+                    <div style="font-size: 32px; font-weight: 900; margin-bottom: 10px;">{data['Volume'].iloc[-1]/1e6:.2f}M</div>
+                    <div style="font-size: 12px; opacity: 0.85;">Trading Activity</div>
+                </div>
+                """, unsafe_allow_html=True)
             
             st.divider()
             
@@ -687,48 +723,137 @@ def main():
                 fig = create_obv_chart(data)
                 st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': True})
             
-            # Support and Resistance
-            st.markdown('<h3 class="section-header">📍 Support & Resistance</h3>', unsafe_allow_html=True)
+            # Support and Resistance with colorful cards
+            st.markdown('<h3 class="section-header">📍 Support & Resistance Levels</h3>', unsafe_allow_html=True)
             
             resistance, support = calculate_support_resistance(data, window=20)
             
             col1, col2, col3 = st.columns(3)
-            with col1:
-                st.metric("Resistance", f"₹{resistance:.2f}", "High level")
-            with col2:
-                st.metric("Current", f"₹{current_price:.2f}", "Current price")
-            with col3:
-                st.metric("Support", f"₹{support:.2f}", "Low level")
             
-            # Fibonacci levels
-            st.markdown('<h3 class="section-header">🔢 Fibonacci Levels</h3>', unsafe_allow_html=True)
+            # Resistance Card (Red gradient)
+            with col1:
+                st.markdown(f"""
+                <div style="background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%); 
+                            border-radius: 16px; padding: 24px; color: white; text-align: center; box-shadow: 0 12px 24px rgba(220, 38, 38, 0.4); border: 1px solid rgba(220, 38, 38, 0.5);">
+                    <div style="font-size: 12px; opacity: 0.85; font-weight: 600; margin-bottom: 12px; letter-spacing: 0.5px;">🔴 RESISTANCE</div>
+                    <div style="font-size: 36px; font-weight: 900; margin-bottom: 8px;">₹{resistance:.2f}</div>
+                    <div style="font-size: 12px; opacity: 0.85;">Selling Zone</div>
+                </div>
+                """, unsafe_allow_html=True)
+            
+            # Current Price Card (Premium Blue)
+            with col2:
+                st.markdown(f"""
+                <div style="background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%); 
+                            border-radius: 16px; padding: 24px; color: white; text-align: center; box-shadow: 0 12px 24px rgba(37, 99, 235, 0.4); border: 1px solid rgba(59, 130, 246, 0.5);">
+                    <div style="font-size: 12px; opacity: 0.85; font-weight: 600; margin-bottom: 12px; letter-spacing: 0.5px;">💎 CURRENT PRICE</div>
+                    <div style="font-size: 36px; font-weight: 900; margin-bottom: 8px;">₹{current_price:.2f}</div>
+                    <div style="font-size: 12px; opacity: 0.85;">Fair Value</div>
+                </div>
+                """, unsafe_allow_html=True)
+            
+            # Support Card (Green gradient)
+            with col3:
+                st.markdown(f"""
+                <div style="background: linear-gradient(135deg, #16a34a 0%, #15803d 100%); 
+                            border-radius: 16px; padding: 24px; color: white; text-align: center; box-shadow: 0 12px 24px rgba(22, 163, 74, 0.4); border: 1px solid rgba(34, 197, 94, 0.5);">
+                    <div style="font-size: 12px; opacity: 0.85; font-weight: 600; margin-bottom: 12px; letter-spacing: 0.5px;">🟢 SUPPORT</div>
+                    <div style="font-size: 36px; font-weight: 900; margin-bottom: 8px;">₹{support:.2f}</div>
+                    <div style="font-size: 12px; opacity: 0.85;">Buying Zone</div>
+                </div>
+                """, unsafe_allow_html=True)
+            
+            # Fibonacci levels with colorful cards
+            st.markdown('<h3 class="section-header">🔢 Fibonacci Retracement Levels</h3>', unsafe_allow_html=True)
             
             high = data['High'].max()
             low = data['Low'].min()
             fib_levels = get_fibonacci_levels(high, low)
             
-            fib_cols = st.columns(len(fib_levels))
-            for col, (level_name, level_value) in zip(fib_cols, fib_levels.items()):
-                with col:
-                    st.metric(level_name, f"₹{level_value:.2f}")
+            # Display fibonacci levels in PREMIUM BLUE/TEAL cards
+            fib_cols = st.columns(7)
+            colors = ['#1e40af', '#0891b2', '#06b6d4', '#2563eb', '#1e40af', '#0891b2', '#dc2626']
             
-            # Technical Indicators Summary
-            st.markdown('<h3 class="section-header">🔬 Technical Indicators</h3>', unsafe_allow_html=True)
+            for col, (level_name, level_value), color in zip(fib_cols, fib_levels.items(), colors):
+                with col:
+                    st.markdown(f"""
+                    <div style="background: linear-gradient(135deg, {color} 0%, rgba(30, 64, 175, 0.6) 100%); 
+                                border-radius: 12px; padding: 16px; color: white; text-align: center; border: 1px solid rgba(255, 255, 255, 0.2); box-shadow: 0 4px 12px {color}40;">
+                        <div style="font-size: 11px; opacity: 0.85; font-weight: 600; margin-bottom: 8px; letter-spacing: 0.5px;">{level_name}</div>
+                        <div style="font-size: 18px; font-weight: 900;">₹{level_value:.0f}</div>
+                    </div>
+                    """, unsafe_allow_html=True)
+            
+            # Technical Indicators Summary with colorful cards
+            st.markdown('<h3 class="section-header">🔬 Technical Indicators Summary</h3>', unsafe_allow_html=True)
             
             indicators = get_technical_indicators(symbol)
             
             if indicators:
                 col1, col2, col3, col4, col5 = st.columns(5)
+                
+                # RSI Card (Premium Blue)
                 with col1:
-                    st.metric("RSI 14", f"{indicators.get('RSI 14', 'N/A'):.0f}" if isinstance(indicators.get('RSI 14'), (int, float)) else "N/A")
+                    rsi_val = indicators.get('RSI 14', 50)
+                    rsi_status = "Overbought" if rsi_val > 70 else "Oversold" if rsi_val < 30 else "Normal"
+                    rsi_color = "#dc2626" if rsi_val > 70 else "#16a34a" if rsi_val < 30 else "#2563eb"
+                    st.markdown(f"""
+                    <div style="background: linear-gradient(135deg, {rsi_color} 0%, rgba(30, 64, 175, 0.5) 100%); 
+                                border-radius: 12px; padding: 16px; color: white; text-align: center; border: 1px solid rgba(255, 255, 255, 0.2); box-shadow: 0 4px 12px {rsi_color}40;">
+                        <div style="font-size: 11px; opacity: 0.85; font-weight: 600; margin-bottom: 8px; letter-spacing: 0.5px;">📊 RSI 14</div>
+                        <div style="font-size: 28px; font-weight: 900;">{rsi_val:.0f}</div>
+                        <div style="font-size: 10px; opacity: 0.85; margin-top: 6px;">{rsi_status}</div>
+                    </div>
+                    """, unsafe_allow_html=True)
+                
+                # MACD Card (Teal)
                 with col2:
-                    st.metric("MACD", indicators.get('MACD', 'N/A'))
+                    macd_status = indicators.get('MACD', 'Neutral')
+                    macd_color = "#16a34a" if macd_status == "Bullish" else "#dc2626"
+                    st.markdown(f"""
+                    <div style="background: linear-gradient(135deg, #0891b2 0%, rgba(8, 145, 178, 0.5) 100%); 
+                                border-radius: 12px; padding: 16px; color: white; text-align: center; border: 1px solid rgba(255, 255, 255, 0.2); box-shadow: 0 4px 12px #0891b240;">
+                        <div style="font-size: 11px; opacity: 0.85; font-weight: 600; margin-bottom: 8px; letter-spacing: 0.5px;">📈 MACD</div>
+                        <div style="font-size: 20px; font-weight: 900;">{macd_status}</div>
+                        <div style="font-size: 10px; opacity: 0.85; margin-top: 6px;">Trend</div>
+                    </div>
+                    """, unsafe_allow_html=True)
+                
+                # SMA 20 Card (Medium Blue)
                 with col3:
-                    st.metric("SMA 20", f"₹{indicators.get('SMA 20', 'N/A'):.2f}" if isinstance(indicators.get('SMA 20'), (int, float)) else "N/A")
+                    sma20 = indicators.get('SMA 20', 0)
+                    st.markdown(f"""
+                    <div style="background: linear-gradient(135deg, #1e40af 0%, rgba(30, 64, 175, 0.5) 100%); 
+                                border-radius: 12px; padding: 16px; color: white; text-align: center; border: 1px solid rgba(255, 255, 255, 0.2); box-shadow: 0 4px 12px #1e40af40;">
+                        <div style="font-size: 11px; opacity: 0.85; font-weight: 600; margin-bottom: 8px; letter-spacing: 0.5px;">📊 SMA 20</div>
+                        <div style="font-size: 18px; font-weight: 900;">₹{sma20:.0f}</div>
+                        <div style="font-size: 10px; opacity: 0.85; margin-top: 6px;">Trend</div>
+                    </div>
+                    """, unsafe_allow_html=True)
+                
+                # SMA 50 Card (Dark Blue)
                 with col4:
-                    st.metric("SMA 50", f"₹{indicators.get('SMA 50', 'N/A'):.2f}" if isinstance(indicators.get('SMA 50'), (int, float)) else "N/A")
+                    sma50 = indicators.get('SMA 50', 0)
+                    st.markdown(f"""
+                    <div style="background: linear-gradient(135deg, #1e3a8a 0%, rgba(30, 58, 138, 0.5) 100%); 
+                                border-radius: 12px; padding: 16px; color: white; text-align: center; border: 1px solid rgba(255, 255, 255, 0.2); box-shadow: 0 4px 12px #1e3a8a40;">
+                        <div style="font-size: 11px; opacity: 0.85; font-weight: 600; margin-bottom: 8px; letter-spacing: 0.5px;">📊 SMA 50</div>
+                        <div style="font-size: 18px; font-weight: 900;">₹{sma50:.0f}</div>
+                        <div style="font-size: 10px; opacity: 0.85; margin-top: 6px;">Trend</div>
+                    </div>
+                    """, unsafe_allow_html=True)
+                
+                # ATR Card (Bright Teal)
                 with col5:
-                    st.metric("ATR", f"₹{indicators.get('ATR', 'N/A'):.2f}" if isinstance(indicators.get('ATR'), (int, float)) else "N/A")
+                    atr = indicators.get('ATR', 0)
+                    st.markdown(f"""
+                    <div style="background: linear-gradient(135deg, #06b6d4 0%, rgba(6, 182, 212, 0.5) 100%); 
+                                border-radius: 12px; padding: 16px; color: white; text-align: center; border: 1px solid rgba(255, 255, 255, 0.2); box-shadow: 0 4px 12px #06b6d440;">
+                        <div style="font-size: 11px; opacity: 0.85; font-weight: 600; margin-bottom: 8px; letter-spacing: 0.5px;">📊 ATR</div>
+                        <div style="font-size: 18px; font-weight: 900;">₹{atr:.2f}</div>
+                        <div style="font-size: 10px; opacity: 0.85; margin-top: 6px;">Volatility</div>
+                    </div>
+                    """, unsafe_allow_html=True)
     
     except Exception as e:
         st.error(f"Error loading chart: {str(e)[:100]}")
